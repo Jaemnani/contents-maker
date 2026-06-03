@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+/* KnowAI design tokens — source of truth: docs/DESIGN.md.
+   Pretendard Variable (body font) is loaded via <link> in app/layout.tsx. */
+@theme {
+  /* brand / accent */
+  --color-primary: #0067b7;
+  --color-primary-dark: #005595;
+  --color-empathy: #007bff;
+  --color-eli5: #16a34a;
+  --color-eli5-light: #f0fdf4;
+  --color-eli5-dark: #15803d;
+  --color-accent: #ffe066;
+  --color-royal: #ff007b;
+
+  /* state */
+  --color-success: #0070f3;
+  --color-danger: #dc2626;
+  --color-warning: #f59e0b;
+
+  /* surfaces / text */
+  --color-ink: #0b1215;
+  --color-muted: #6b7280;
+  --color-canvas: #fafaf6;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f5f5f5;
+  --color-border: #e5e7eb;
+
+  /* type families */
+  --font-sans: "Pretendard Variable", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-barlow), "Pretendard Variable", ui-sans-serif, sans-serif;
+
+  /* radii (DESIGN.md: md=8 surfaces use lg=12) */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
+
+  /* elevation — deliberately understated */
+  --shadow-sm: 0 5px 10px rgba(0, 0, 0, 0.12);
+  --shadow-md: 0 8px 30px rgba(0, 0, 0, 0.12);
+  --shadow-glow: 0 0 20px -5px rgba(246, 209, 104, 0.5);
+
+  /* motion */
+  --ease-quint: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html {
+  background: var(--color-canvas);
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* headings default to the display stack */
+h1, h2, h3 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+/* standard interactive hover for bordered surfaces (DESIGN.md motion) */
+.lift {
+  transition: all 200ms var(--ease-quint);
+}
+.lift:hover {
+  border-color: var(--color-empathy);
+  transform: translateY(-1px);
+}
+.lift:active {
+  transform: translateY(0) scale(0.98);
+}

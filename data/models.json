@@ -1,0 +1,1263 @@
+{
+  "generatedAt": "2026-05-22 15:21 UTC",
+  "counts": {
+    "all": 358,
+    "text": 323,
+    "image": 6,
+    "video": 14
+  },
+  "tiers": [
+    "premium",
+    "standard",
+    "budget",
+    "free"
+  ],
+  "tierLabels": {
+    "premium": "프리미엄",
+    "standard": "표준",
+    "budget": "저가",
+    "free": "무료"
+  },
+  "cheapestPresets": {
+    "text": [
+      "mistralai/ministral-8b-2512",
+      "mistralai/ministral-14b-2512",
+      "deepseek/deepseek-v4-flash",
+      "meta-llama/llama-4-scout",
+      "google/gemma-4-26b-a4b-it"
+    ],
+    "image": [
+      "google/gemini-2.5-flash-image",
+      "google/gemini-3.1-flash-image-preview"
+    ],
+    "video": [
+      "google/veo-3.1-lite",
+      "google/veo-3.1-fast"
+    ]
+  },
+  "text": [
+    {
+      "id": "openai/gpt-chat-latest",
+      "provider": "openai",
+      "pricing": {
+        "prompt": "0.000005",
+        "completion": "0.00003"
+      },
+      "context": 400000,
+      "estPerRunKO": 0.14,
+      "tier": "premium",
+      "inPerM": 5.0,
+      "outPerM": 30.0
+    },
+    {
+      "id": "openai/gpt-5.5-pro",
+      "provider": "openai",
+      "pricing": {
+        "prompt": "0.00003",
+        "completion": "0.00018"
+      },
+      "context": 1050000,
+      "estPerRunKO": 0.84,
+      "tier": "premium",
+      "inPerM": 30.0,
+      "outPerM": 180.0
+    },
+    {
+      "id": "openai/gpt-5.5",
+      "provider": "openai",
+      "pricing": {
+        "prompt": "0.000005",
+        "completion": "0.00003"
+      },
+      "context": 1050000,
+      "estPerRunKO": 0.14,
+      "tier": "premium",
+      "inPerM": 5.0,
+      "outPerM": 30.0
+    },
+    {
+      "id": "openai/gpt-5.4-nano",
+      "provider": "openai",
+      "pricing": {
+        "prompt": "0.0000002",
+        "completion": "0.00000125"
+      },
+      "context": 400000,
+      "estPerRunKO": 0.0058,
+      "tier": "budget",
+      "inPerM": 0.2,
+      "outPerM": 1.25
+    },
+    {
+      "id": "anthropic/claude-opus-4.7-fast",
+      "provider": "anthropic",
+      "pricing": {
+        "prompt": "0.00003",
+        "completion": "0.00015"
+      },
+      "context": 1000000,
+      "estPerRunKO": 0.702,
+      "tier": "premium",
+      "inPerM": 30.0,
+      "outPerM": 150.0
+    },
+    {
+      "id": "anthropic/claude-opus-4.7",
+      "provider": "anthropic",
+      "pricing": {
+        "prompt": "0.000005",
+        "completion": "0.000025"
+      },
+      "context": 1000000,
+      "estPerRunKO": 0.117,
+      "tier": "premium",
+      "inPerM": 5.0,
+      "outPerM": 25.0
+    },
+    {
+      "id": "anthropic/claude-opus-4.6-fast",
+      "provider": "anthropic",
+      "pricing": {
+        "prompt": "0.00003",
+        "completion": "0.00015"
+      },
+      "context": 1000000,
+      "estPerRunKO": 0.702,
+      "tier": "premium",
+      "inPerM": 30.0,
+      "outPerM": 150.0
+    },
+    {
+      "id": "anthropic/claude-sonnet-4.6",
+      "provider": "anthropic",
+      "pricing": {
+        "prompt": "0.000003",
+        "completion": "0.000015"
+      },
+      "context": 1000000,
+      "estPerRunKO": 0.0702,
+      "tier": "premium",
+      "inPerM": 3.0,
+      "outPerM": 15.0
+    },
+    {
+      "id": "google/gemini-3.5-flash",
+      "provider": "google",
+      "pricing": {
+        "prompt": "0.0000015",
+        "completion": "0.000009"
+      },
+      "context": 1048576,
+      "estPerRunKO": 0.042,
+      "tier": "standard",
+      "inPerM": 1.5,
+      "outPerM": 9.0
+    },
+    {
+      "id": "google/gemini-3.1-flash-lite",
+      "provider": "google",
+      "pricing": {
+        "prompt": "0.00000025",
+        "completion": "0.0000015"
+      },
+      "context": 1048576,
+      "estPerRunKO": 0.007,
+      "tier": "budget",
+      "inPerM": 0.25,
+      "outPerM": 1.5
+    },
+    {
+      "id": "google/gemma-4-26b-a4b-it:free",
+      "provider": "google",
+      "pricing": {
+        "prompt": "0",
+        "completion": "0"
+      },
+      "context": 262144,
+      "estPerRunKO": 0.0,
+      "tier": "free",
+      "inPerM": 0.0,
+      "outPerM": 0.0
+    },
+    {
+      "id": "google/gemma-4-26b-a4b-it",
+      "provider": "google",
+      "pricing": {
+        "prompt": "0.00000006",
+        "completion": "0.00000033"
+      },
+      "context": 262144,
+      "estPerRunKO": 0.0015,
+      "tier": "budget",
+      "inPerM": 0.06,
+      "outPerM": 0.33
+    },
+    {
+      "id": "x-ai/grok-build-0.1",
+      "provider": "x-ai",
+      "pricing": {
+        "prompt": "0.000001",
+        "completion": "0.000002"
+      },
+      "context": 256000,
+      "estPerRunKO": 0.0096,
+      "tier": "budget",
+      "inPerM": 1.0,
+      "outPerM": 2.0
+    },
+    {
+      "id": "x-ai/grok-4.3",
+      "provider": "x-ai",
+      "pricing": {
+        "prompt": "0.00000125",
+        "completion": "0.0000025"
+      },
+      "context": 1000000,
+      "estPerRunKO": 0.012,
+      "tier": "standard",
+      "inPerM": 1.25,
+      "outPerM": 2.5
+    },
+    {
+      "id": "x-ai/grok-4.20-multi-agent",
+      "provider": "x-ai",
+      "pricing": {
+        "prompt": "0.000002",
+        "completion": "0.000006"
+      },
+      "context": 2000000,
+      "estPerRunKO": 0.0284,
+      "tier": "standard",
+      "inPerM": 2.0,
+      "outPerM": 6.0
+    },
+    {
+      "id": "x-ai/grok-4.20",
+      "provider": "x-ai",
+      "pricing": {
+        "prompt": "0.00000125",
+        "completion": "0.0000025"
+      },
+      "context": 2000000,
+      "estPerRunKO": 0.012,
+      "tier": "standard",
+      "inPerM": 1.25,
+      "outPerM": 2.5
+    },
+    {
+      "id": "deepseek/deepseek-v4-pro",
+      "provider": "deepseek",
+      "pricing": {
+        "prompt": "0.000000435",
+        "completion": "0.00000087"
+      },
+      "context": 1048576,
+      "estPerRunKO": 0.0042,
+      "tier": "budget",
+      "inPerM": 0.435,
+      "outPerM": 0.87
+    },
+    {
+      "id": "deepseek/deepseek-v4-flash:free",
+      "provider": "deepseek",
+      "pricing": {
+        "prompt": "0",
+        "completion": "0"
+      },
+      "context": 1048576,
+      "estPerRunKO": 0.0,
+      "tier": "free",
+      "inPerM": 0.0,
+      "outPerM": 0.0
+    },
+    {
+      "id": "deepseek/deepseek-v4-flash",
+      "provider": "deepseek",
+      "pricing": {
+        "prompt": "0.000000112",
+        "completion": "0.000000224"
+      },
+      "context": 1048576,
+      "estPerRunKO": 0.0011,
+      "tier": "budget",
+      "inPerM": 0.112,
+      "outPerM": 0.224
+    },
+    {
+      "id": "deepseek/deepseek-v3.2-speciale",
+      "provider": "deepseek",
+      "pricing": {
+        "prompt": "0.000000287",
+        "completion": "0.000000431"
+      },
+      "context": 163840,
+      "estPerRunKO": 0.0021,
+      "tier": "budget",
+      "inPerM": 0.287,
+      "outPerM": 0.431
+    },
+    {
+      "id": "meta-llama/llama-4-maverick",
+      "provider": "meta-llama",
+      "pricing": {
+        "prompt": "0.00000015",
+        "completion": "0.0000006"
+      },
+      "context": 1048576,
+      "estPerRunKO": 0.0028,
+      "tier": "budget",
+      "inPerM": 0.15,
+      "outPerM": 0.6
+    },
+    {
+      "id": "meta-llama/llama-4-scout",
+      "provider": "meta-llama",
+      "pricing": {
+        "prompt": "0.00000008",
+        "completion": "0.0000003"
+      },
+      "context": 10000000,
+      "estPerRunKO": 0.0014,
+      "tier": "budget",
+      "inPerM": 0.08,
+      "outPerM": 0.3
+    },
+    {
+      "id": "meta-llama/llama-3.3-70b-instruct:free",
+      "provider": "meta-llama",
+      "pricing": {
+        "prompt": "0",
+        "completion": "0"
+      },
+      "context": 131072,
+      "estPerRunKO": 0.0,
+      "tier": "free",
+      "inPerM": 0.0,
+      "outPerM": 0.0
+    },
+    {
+      "id": "meta-llama/llama-3.3-70b-instruct",
+      "provider": "meta-llama",
+      "pricing": {
+        "prompt": "0.0000001",
+        "completion": "0.00000032"
+      },
+      "context": 131072,
+      "estPerRunKO": 0.0015,
+      "tier": "budget",
+      "inPerM": 0.1,
+      "outPerM": 0.32
+    },
+    {
+      "id": "qwen/qwen3.7-max",
+      "provider": "qwen",
+      "pricing": {
+        "prompt": "0.0000025",
+        "completion": "0.0000075"
+      },
+      "context": 1000000,
+      "estPerRunKO": 0.0355,
+      "tier": "standard",
+      "inPerM": 2.5,
+      "outPerM": 7.5
+    },
+    {
+      "id": "qwen/qwen3.5-plus-20260420",
+      "provider": "qwen",
+      "pricing": {
+        "prompt": "0.0000003",
+        "completion": "0.0000018"
+      },
+      "context": 1000000,
+      "estPerRunKO": 0.0084,
+      "tier": "budget",
+      "inPerM": 0.3,
+      "outPerM": 1.8
+    },
+    {
+      "id": "qwen/qwen3.6-flash",
+      "provider": "qwen",
+      "pricing": {
+        "prompt": "0.0000001875",
+        "completion": "0.000001125"
+      },
+      "context": 1000000,
+      "estPerRunKO": 0.0053,
+      "tier": "budget",
+      "inPerM": 0.1875,
+      "outPerM": 1.125
+    },
+    {
+      "id": "qwen/qwen3.6-35b-a3b",
+      "provider": "qwen",
+      "pricing": {
+        "prompt": "0.00000015",
+        "completion": "0.000001"
+      },
+      "context": 262144,
+      "estPerRunKO": 0.0047,
+      "tier": "budget",
+      "inPerM": 0.15,
+      "outPerM": 1.0
+    },
+    {
+      "id": "mistralai/mistral-medium-3-5",
+      "provider": "mistralai",
+      "pricing": {
+        "prompt": "0.0000015",
+        "completion": "0.0000075"
+      },
+      "context": 262144,
+      "estPerRunKO": 0.0351,
+      "tier": "standard",
+      "inPerM": 1.5,
+      "outPerM": 7.5
+    },
+    {
+      "id": "mistralai/mistral-small-2603",
+      "provider": "mistralai",
+      "pricing": {
+        "prompt": "0.00000015",
+        "completion": "0.0000006"
+      },
+      "context": 262144,
+      "estPerRunKO": 0.0028,
+      "tier": "budget",
+      "inPerM": 0.15,
+      "outPerM": 0.6
+    },
+    {
+      "id": "mistralai/ministral-14b-2512",
+      "provider": "mistralai",
+      "pricing": {
+        "prompt": "0.0000002",
+        "completion": "0.0000002"
+      },
+      "context": 262144,
+      "estPerRunKO": 0.001,
+      "tier": "budget",
+      "inPerM": 0.2,
+      "outPerM": 0.2
+    },
+    {
+      "id": "mistralai/ministral-8b-2512",
+      "provider": "mistralai",
+      "pricing": {
+        "prompt": "0.00000015",
+        "completion": "0.00000015"
+      },
+      "context": 262144,
+      "estPerRunKO": 0.0008,
+      "tier": "budget",
+      "inPerM": 0.15,
+      "outPerM": 0.15
+    },
+    {
+      "id": "moonshotai/kimi-k2.6",
+      "provider": "moonshotai",
+      "pricing": {
+        "prompt": "0.00000073",
+        "completion": "0.00000349"
+      },
+      "context": 262144,
+      "estPerRunKO": 0.0163,
+      "tier": "standard",
+      "inPerM": 0.73,
+      "outPerM": 3.49
+    },
+    {
+      "id": "moonshotai/kimi-k2.5",
+      "provider": "moonshotai",
+      "pricing": {
+        "prompt": "0.0000004",
+        "completion": "0.0000019"
+      },
+      "context": 262144,
+      "estPerRunKO": 0.0089,
+      "tier": "budget",
+      "inPerM": 0.4,
+      "outPerM": 1.9
+    },
+    {
+      "id": "moonshotai/kimi-k2-thinking",
+      "provider": "moonshotai",
+      "pricing": {
+        "prompt": "0.0000006",
+        "completion": "0.0000025"
+      },
+      "context": 262144,
+      "estPerRunKO": 0.0117,
+      "tier": "standard",
+      "inPerM": 0.6,
+      "outPerM": 2.5
+    },
+    {
+      "id": "moonshotai/kimi-k2-0905",
+      "provider": "moonshotai",
+      "pricing": {
+        "prompt": "0.0000006",
+        "completion": "0.0000025"
+      },
+      "context": 262144,
+      "estPerRunKO": 0.0117,
+      "tier": "standard",
+      "inPerM": 0.6,
+      "outPerM": 2.5
+    },
+    {
+      "id": "z-ai/glm-5.1",
+      "provider": "z-ai",
+      "pricing": {
+        "prompt": "0.00000098",
+        "completion": "0.00000308"
+      },
+      "context": 202752,
+      "estPerRunKO": 0.0146,
+      "tier": "standard",
+      "inPerM": 0.98,
+      "outPerM": 3.08
+    },
+    {
+      "id": "z-ai/glm-5v-turbo",
+      "provider": "z-ai",
+      "pricing": {
+        "prompt": "0.0000012",
+        "completion": "0.000004"
+      },
+      "context": 202752,
+      "estPerRunKO": 0.0189,
+      "tier": "standard",
+      "inPerM": 1.2,
+      "outPerM": 4.0
+    },
+    {
+      "id": "z-ai/glm-5-turbo",
+      "provider": "z-ai",
+      "pricing": {
+        "prompt": "0.0000012",
+        "completion": "0.000004"
+      },
+      "context": 202752,
+      "estPerRunKO": 0.0189,
+      "tier": "standard",
+      "inPerM": 1.2,
+      "outPerM": 4.0
+    },
+    {
+      "id": "z-ai/glm-5",
+      "provider": "z-ai",
+      "pricing": {
+        "prompt": "0.0000006",
+        "completion": "0.00000192"
+      },
+      "context": 202752,
+      "estPerRunKO": 0.0091,
+      "tier": "budget",
+      "inPerM": 0.6,
+      "outPerM": 1.92
+    }
+  ],
+  "image": [
+    {
+      "id": "openai/gpt-5.4-image-2",
+      "provider": "openai",
+      "pricing": {
+        "image": null,
+        "prompt": "0.000008",
+        "completion": "0.000015"
+      },
+      "imagePrice": null,
+      "inPerM": 8.0,
+      "outPerM": 15.0,
+      "imageUnitUsd": 0.19,
+      "jaTextQuality": "unknown",
+      "tier": "premium"
+    },
+    {
+      "id": "google/gemini-3.1-flash-image-preview",
+      "provider": "google",
+      "pricing": {
+        "image": null,
+        "prompt": "0.0000005",
+        "completion": "0.000003"
+      },
+      "imagePrice": null,
+      "inPerM": 0.5,
+      "outPerM": 3.0,
+      "imageUnitUsd": 0.05,
+      "jaTextQuality": "good",
+      "tier": "budget"
+    },
+    {
+      "id": "google/gemini-3-pro-image-preview",
+      "provider": "google",
+      "pricing": {
+        "image": "0.000002",
+        "prompt": "0.000002",
+        "completion": "0.000012"
+      },
+      "imagePrice": 2e-06,
+      "inPerM": 2.0,
+      "outPerM": 12.0,
+      "imageUnitUsd": 0.14,
+      "jaTextQuality": "good",
+      "tier": "premium"
+    },
+    {
+      "id": "openai/gpt-5-image-mini",
+      "provider": "openai",
+      "pricing": {
+        "image": null,
+        "prompt": "0.0000025",
+        "completion": "0.000002"
+      },
+      "imagePrice": null,
+      "inPerM": 2.5,
+      "outPerM": 2.0,
+      "imageUnitUsd": 0.06,
+      "jaTextQuality": "unknown",
+      "tier": "budget"
+    },
+    {
+      "id": "openai/gpt-5-image",
+      "provider": "openai",
+      "pricing": {
+        "image": null,
+        "prompt": "0.00001",
+        "completion": "0.00001"
+      },
+      "imagePrice": null,
+      "inPerM": 10.0,
+      "outPerM": 10.0,
+      "imageUnitUsd": 0.19,
+      "jaTextQuality": "unknown",
+      "tier": "premium"
+    },
+    {
+      "id": "google/gemini-2.5-flash-image",
+      "provider": "google",
+      "pricing": {
+        "image": "0.0000003",
+        "prompt": "0.0000003",
+        "completion": "0.0000025"
+      },
+      "imagePrice": 3e-07,
+      "inPerM": 0.3,
+      "outPerM": 2.5,
+      "imageUnitUsd": 0.04,
+      "jaTextQuality": "good",
+      "tier": "budget"
+    }
+  ],
+  "video": [
+    {
+      "id": "x-ai/grok-imagine-video",
+      "provider": "x-ai",
+      "resolutions": [
+        "480p",
+        "720p"
+      ],
+      "aspectRatios": [
+        "16:9",
+        "9:16",
+        "1:1",
+        "4:3",
+        "3:4",
+        "3:2",
+        "2:3"
+      ],
+      "durations": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "sizes": [
+        "854x480",
+        "1280x720",
+        "480x854",
+        "720x1280",
+        "480x480",
+        "720x720",
+        "640x480",
+        "960x720",
+        "480x640",
+        "720x960",
+        "720x480",
+        "1080x720",
+        "480x720",
+        "720x1080"
+      ],
+      "generateAudio": null,
+      "pricingSkus": {
+        "cents_per_image_input": "0.2",
+        "cents_per_video_output_second_480p": "5",
+        "cents_per_video_output_second_720p": "7"
+      },
+      "est15s": 1.05,
+      "estStr": "$0.07/s(720p)×15s = $1.05",
+      "tokenBased": false,
+      "tier": "standard"
+    },
+    {
+      "id": "kwaivgi/kling-v3.0-pro",
+      "provider": "kwaivgi",
+      "resolutions": [
+        "720p"
+      ],
+      "aspectRatios": [
+        "16:9",
+        "9:16",
+        "1:1"
+      ],
+      "durations": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "sizes": [
+        "1280x720",
+        "720x1280",
+        "720x720"
+      ],
+      "generateAudio": true,
+      "pricingSkus": {
+        "duration_seconds": "0.112",
+        "duration_seconds_with_audio": "0.168",
+        "text_to_video_duration_seconds_480p": "0.112",
+        "text_to_video_duration_seconds_720p": "0.112",
+        "image_to_video_duration_seconds_720p": "0.112",
+        "text_to_video_duration_seconds_1080p": "0.112",
+        "image_to_video_duration_seconds_1080p": "0.112"
+      },
+      "est15s": 1.68,
+      "estStr": "$0.112/s(720p)×15s = $1.68",
+      "tokenBased": false,
+      "tier": "premium"
+    },
+    {
+      "id": "kwaivgi/kling-v3.0-std",
+      "provider": "kwaivgi",
+      "resolutions": [
+        "720p"
+      ],
+      "aspectRatios": [
+        "16:9",
+        "9:16",
+        "1:1"
+      ],
+      "durations": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "sizes": [
+        "1280x720",
+        "720x1280",
+        "720x720"
+      ],
+      "generateAudio": true,
+      "pricingSkus": {
+        "duration_seconds": "0.084",
+        "duration_seconds_with_audio": "0.126",
+        "text_to_video_duration_seconds_480p": "0.084",
+        "text_to_video_duration_seconds_720p": "0.084",
+        "image_to_video_duration_seconds_720p": "0.084",
+        "text_to_video_duration_seconds_1080p": "0.084",
+        "image_to_video_duration_seconds_1080p": "0.084"
+      },
+      "est15s": 1.26,
+      "estStr": "$0.084/s(720p)×15s = $1.26",
+      "tokenBased": false,
+      "tier": "standard"
+    },
+    {
+      "id": "google/veo-3.1-fast",
+      "provider": "google",
+      "resolutions": [
+        "720p",
+        "1080p",
+        "4K"
+      ],
+      "aspectRatios": [
+        "16:9",
+        "9:16"
+      ],
+      "durations": [
+        4,
+        6,
+        8
+      ],
+      "sizes": [
+        "1280x720",
+        "1080x1920",
+        "1920x1080",
+        "720x1280",
+        "3840x2160",
+        "2160x3840"
+      ],
+      "generateAudio": true,
+      "pricingSkus": {
+        "duration_seconds_with_audio": "0.12",
+        "duration_seconds_with_audio_4k": "0.30",
+        "duration_seconds_without_audio": "0.10",
+        "duration_seconds_with_audio_720p": "0.10",
+        "duration_seconds_without_audio_4k": "0.25",
+        "duration_seconds_without_audio_720p": "0.08"
+      },
+      "est15s": 0.8,
+      "estStr": "$0.1/s(1080p)×8s = $0.8",
+      "tokenBased": false,
+      "tier": "budget"
+    },
+    {
+      "id": "google/veo-3.1-lite",
+      "provider": "google",
+      "resolutions": [
+        "720p",
+        "1080p"
+      ],
+      "aspectRatios": [
+        "16:9",
+        "9:16"
+      ],
+      "durations": [
+        8,
+        4,
+        6
+      ],
+      "sizes": [
+        "1280x720",
+        "720x1280",
+        "1920x1080",
+        "1080x1920"
+      ],
+      "generateAudio": true,
+      "pricingSkus": {
+        "duration_seconds_with_audio": "0.08",
+        "duration_seconds_without_audio": "0.05",
+        "duration_seconds_with_audio_720p": "0.05",
+        "duration_seconds_without_audio_720p": "0.03"
+      },
+      "est15s": 0.4,
+      "estStr": "$0.05/s(1080p)×8s = $0.4",
+      "tokenBased": false,
+      "tier": "budget"
+    },
+    {
+      "id": "kwaivgi/kling-video-o1",
+      "provider": "kwaivgi",
+      "resolutions": [
+        "720p"
+      ],
+      "aspectRatios": [
+        "16:9",
+        "9:16",
+        "1:1"
+      ],
+      "durations": [
+        5,
+        10
+      ],
+      "sizes": [
+        "1280x720",
+        "720x1280",
+        "720x720"
+      ],
+      "generateAudio": true,
+      "pricingSkus": {
+        "duration_seconds": "0.1120"
+      },
+      "est15s": 1.12,
+      "estStr": "$0.112/s(720p)×10s = $1.12",
+      "tokenBased": false,
+      "tier": "standard"
+    },
+    {
+      "id": "minimax/hailuo-2.3",
+      "provider": "minimax",
+      "resolutions": [
+        "1080p"
+      ],
+      "aspectRatios": [
+        "16:9"
+      ],
+      "durations": [
+        6,
+        10
+      ],
+      "sizes": [
+        "1920x1080"
+      ],
+      "generateAudio": false,
+      "pricingSkus": {
+        "duration_seconds": "0.0817"
+      },
+      "est15s": 0.817,
+      "estStr": "$0.0817/s(1080p)×10s = $0.817",
+      "tokenBased": false,
+      "tier": "budget"
+    },
+    {
+      "id": "bytedance/seedance-2.0-fast",
+      "provider": "bytedance",
+      "resolutions": [
+        "480p",
+        "720p"
+      ],
+      "aspectRatios": [
+        "1:1",
+        "3:4",
+        "9:16",
+        "4:3",
+        "16:9",
+        "21:9",
+        "9:21"
+      ],
+      "durations": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "sizes": [
+        "480x480",
+        "480x640",
+        "480x854",
+        "640x480",
+        "854x480",
+        "1120x480",
+        "720x720",
+        "720x960",
+        "720x1280",
+        "720x1680",
+        "960x720",
+        "1280x720",
+        "1680x720"
+      ],
+      "generateAudio": true,
+      "pricingSkus": {
+        "video_tokens": "0.0000056",
+        "video_tokens_without_audio": "0.0000056"
+      },
+      "est15s": null,
+      "estStr": "토큰제 $5.6/Mtok",
+      "tokenBased": true,
+      "tier": "standard"
+    },
+    {
+      "id": "bytedance/seedance-2.0",
+      "provider": "bytedance",
+      "resolutions": [
+        "480p",
+        "720p",
+        "1080p"
+      ],
+      "aspectRatios": [
+        "1:1",
+        "3:4",
+        "9:16",
+        "4:3",
+        "16:9",
+        "21:9",
+        "9:21"
+      ],
+      "durations": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "sizes": [
+        "480x480",
+        "480x640",
+        "480x854",
+        "640x480",
+        "854x480",
+        "1120x480",
+        "720x720",
+        "720x960",
+        "720x1280",
+        "720x1680",
+        "960x720",
+        "1280x720",
+        "1680x720",
+        "1080x1080",
+        "1080x1440",
+        "1080x1920",
+        "1440x1080",
+        "1920x1080",
+        "2520x1080"
+      ],
+      "generateAudio": true,
+      "pricingSkus": {
+        "video_tokens": "0.000007",
+        "video_tokens_without_audio": "0.000007"
+      },
+      "est15s": null,
+      "estStr": "토큰제 $7.0/Mtok",
+      "tokenBased": true,
+      "tier": "standard"
+    },
+    {
+      "id": "alibaba/wan-2.7",
+      "provider": "alibaba",
+      "resolutions": [
+        "720p",
+        "1080p"
+      ],
+      "aspectRatios": [
+        "16:9",
+        "9:16",
+        "1:1",
+        "4:3",
+        "3:4"
+      ],
+      "durations": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "sizes": [
+        "1280x720",
+        "720x1280",
+        "1920x1080",
+        "1080x1920",
+        "720x720",
+        "1080x1080",
+        "960x720",
+        "720x960",
+        "1440x1080",
+        "1080x1440"
+      ],
+      "generateAudio": true,
+      "pricingSkus": {
+        "duration_seconds": "0.1"
+      },
+      "est15s": 1.0,
+      "estStr": "$0.1/s(1080p)×10s = $1.0",
+      "tokenBased": false,
+      "tier": "standard"
+    },
+    {
+      "id": "alibaba/wan-2.6",
+      "provider": "alibaba",
+      "resolutions": [
+        "720p",
+        "1080p"
+      ],
+      "aspectRatios": [
+        "16:9",
+        "9:16"
+      ],
+      "durations": [
+        5,
+        10
+      ],
+      "sizes": [
+        "1280x720",
+        "1080x1920",
+        "720x1280",
+        "1920x1080"
+      ],
+      "generateAudio": true,
+      "pricingSkus": {
+        "text_to_video_duration_seconds_480p": "0.04",
+        "text_to_video_duration_seconds_720p": "0.08",
+        "image_to_video_duration_seconds_720p": "0.10",
+        "text_to_video_duration_seconds_1080p": "0.12",
+        "image_to_video_duration_seconds_1080p": "0.15"
+      },
+      "est15s": 1.2,
+      "estStr": "$0.12/s(1080p)×10s = $1.2",
+      "tokenBased": false,
+      "tier": "standard"
+    },
+    {
+      "id": "bytedance/seedance-1-5-pro",
+      "provider": "bytedance",
+      "resolutions": [
+        "480p",
+        "720p",
+        "1080p"
+      ],
+      "aspectRatios": [
+        "1:1",
+        "3:4",
+        "9:16",
+        "9:21",
+        "4:3",
+        "16:9",
+        "21:9"
+      ],
+      "durations": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "sizes": [
+        "480x480",
+        "480x640",
+        "480x854",
+        "480x1120",
+        "640x480",
+        "720x720",
+        "720x960",
+        "720x1280",
+        "720x1680",
+        "854x480",
+        "960x720",
+        "1080x1080",
+        "1080x1440",
+        "1080x1920",
+        "1080x2520",
+        "1120x480",
+        "1280x720",
+        "1440x1080",
+        "1680x720",
+        "1920x1080",
+        "2520x1080"
+      ],
+      "generateAudio": true,
+      "pricingSkus": {
+        "video_tokens": "0.0000024",
+        "video_tokens_without_audio": "0.0000012"
+      },
+      "est15s": null,
+      "estStr": "토큰제 $2.4/Mtok",
+      "tokenBased": true,
+      "tier": "standard"
+    },
+    {
+      "id": "openai/sora-2-pro",
+      "provider": "openai",
+      "resolutions": [
+        "720p",
+        "1080p"
+      ],
+      "aspectRatios": [
+        "16:9",
+        "9:16"
+      ],
+      "durations": [
+        4,
+        8,
+        12,
+        16,
+        20
+      ],
+      "sizes": [
+        "1280x720",
+        "1080x1920",
+        "1920x1080",
+        "720x1280"
+      ],
+      "generateAudio": true,
+      "pricingSkus": {
+        "duration_seconds_720p": "0.30",
+        "duration_seconds_1024p": "0.50",
+        "duration_seconds_1080p": "0.50"
+      },
+      "est15s": 7.5,
+      "estStr": "$0.5/s(1080p)×15s = $7.5",
+      "tokenBased": false,
+      "tier": "premium"
+    },
+    {
+      "id": "google/veo-3.1",
+      "provider": "google",
+      "resolutions": [
+        "720p",
+        "1080p",
+        "4K"
+      ],
+      "aspectRatios": [
+        "16:9",
+        "9:16"
+      ],
+      "durations": [
+        4,
+        6,
+        8
+      ],
+      "sizes": [
+        "1280x720",
+        "1080x1920",
+        "1920x1080",
+        "720x1280",
+        "3840x2160",
+        "2160x3840"
+      ],
+      "generateAudio": true,
+      "pricingSkus": {
+        "duration_seconds_with_audio": "0.40",
+        "duration_seconds_with_audio_4k": "0.60",
+        "duration_seconds_without_audio": "0.20",
+        "duration_seconds_without_audio_4k": "0.40"
+      },
+      "est15s": 1.6,
+      "estStr": "$0.2/s(1080p)×8s = $1.6",
+      "tokenBased": false,
+      "tier": "premium"
+    }
+  ]
+}
