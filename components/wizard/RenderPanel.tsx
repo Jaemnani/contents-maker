@@ -1,23 +1,29 @@
 "use client";
-// Render panel: choose output languages, render via SSE, show the full step checklist with
-// per-step status (pending → active → done) + a progress bar, then preview + download.
-import { useMemo, useState } from "react";
-import type { Composition, RenderRecord } from "@/lib/composition-types";
+// Render panel: choose output languages + transition, render via Remotion (SSE), show
+// per-language progress, then preview + download (render history, newest-first).
+import { useState } from "react";
+import type { Composition, RenderRecord, TransitionPreset } from "@/lib/composition-types";
+import { TRANSITION_LABELS } from "@/lib/composition-types";
 import type { Language } from "@/lib/types";
 import { LANGUAGE_LABELS } from "@/lib/channels";
 import { streamRender, fileUrl, type RenderEvent } from "@/lib/client/wizard";
+import Select, { type SelectOption } from "@/components/ui/Select";
 
 const ALL_LANGS: Language[] = ["ko", "ja", "en"];
-const PHASE_LABEL: Record<string, string> = { start: "시작 카드", main: "본문 합성", end: "끝 카드", assemble: "조립" };
+const TRANSITION_OPTS: SelectOption[] = (Object.keys(TRANSITION_LABELS) as TransitionPreset[]).map((k) => ({ value: k, label: TRANSITION_LABELS[k] }));
+const PHASE_LABEL: Record<string, string> = { start: "대기", browser: "브라우저 준비", bundle: "번들 준비", render: "렌더링", done: "완료" };
 
-interface RStep {
-  key: string; // `${lang}:${phase}`
-  lang: Language;
-  phase: string;
-  label: string;
-}
+type Prog = Record<string, { pct: number; phase: string }>;
 
-export default function RenderPanel({ comp, onBusy }: { comp: Composition; onBusy?: (b: boolean) => void }) {
+export default function RenderPanel({
+  comp,
+  onBusy,
+  onPatchRenderOpts,
+}: {
+  comp: Composition;
+  onBusy?: (b: boolean) => void;
+  onPatchRenderOpts?: (patch: Partial<Composition["renderOpts"]>) => void;
+}) {
   const [langs, setLangs] = useState<Language[]>(comp.renderLanguages?.length ? comp.renderLanguages : [comp.primaryLanguage]);
   const [rendering, setRendering] = useState(false);
   const [history, setHistory] = useState<RenderRecord[]>(
@@ -27,52 +33,23 @@ export default function RenderPanel({ comp, onBusy }: { comp: Composition; onBus
         .map(([language, p]) => ({ language: language as Language, path: p as string, createdAt: comp.updatedAt }))
   );
   const [err, setErr] = useState<string | null>(null);
-  const [done, setDone] = useState<Set<string>>(new Set());
-  const [active, setActive] = useState<string | null>(null);
+  const [prog, setProg] = useState<Prog>({});
 
   const ready = Boolean(comp.stages.find((s) => s.id === "main")?.aRef && comp.stages.find((s) => s.id === "main")?.bRef);
-
-  // The full ordered step plan for the selected languages (enabled stages + assemble per language).
-  const steps: RStep[] = useMemo(() => {
-    const stagePhases = comp.stages
-      .filter((s) => s.enabled)
-      .sort((a, b) => a.order - b.order)
-      .map((s) => s.id as string);
-    const phases = [...stagePhases, "assemble"];
-    const out: RStep[] = [];
-    for (const lang of langs) {
-      for (const phase of phases) {
-        out.push({ key: `${lang}:${phase}`, lang, phase, label: `${LANGUAGE_LABELS[lang]} · ${PHASE_LABEL[phase] ?? phase}` });
-      }
-    }
-    return out;
-  }, [comp.stages, langs]);
-
   const toggle = (l: Language) => !rendering && setLangs((cur) => (cur.includes(l) ? cur.filter((x) => x !== l) : [...cur, l]));
-
-  function markActive(key: string) {
-    const idx = steps.findIndex((s) => s.key === key);
-    if (idx < 0) return;
-    setActive(key);
-    setDone(new Set(steps.slice(0, idx).map((s) => s.key))); // everything before is done (sequential)
-  }
 
   async function render() {
     if (!langs.length || rendering) return;
     setRendering(true);
     onBusy?.(true);
     setErr(null);
-    setDone(new Set());
-    setActive(null);
+    setProg(Object.fromEntries(langs.map((l) => [l, { pct: 0, phase: "start" }])));
     try {
       await streamRender(comp.compId, langs, (e: RenderEvent) => {
-        if (e.type === "progress" && e.language && e.phase !== "done") markActive(`${e.language}:${e.phase}`);
+        if (e.type === "progress" && e.language) setProg((p) => ({ ...p, [e.language!]: { pct: e.pct ?? p[e.language!]?.pct ?? 0, phase: e.phase } }));
         else if (e.type === "lang-done") {
           setHistory((h) => [{ language: e.language, path: e.path, createdAt: new Date().toISOString() }, ...h]);
-          setDone((d) => new Set([...d, ...steps.filter((s) => s.lang === e.language).map((s) => s.key)]));
-        } else if (e.type === "done") {
-          setActive(null);
-          setDone(new Set(steps.map((s) => s.key)));
+          setProg((p) => ({ ...p, [e.language]: { pct: 100, phase: "done" } }));
         } else if (e.type === "error") setErr(e.message);
       });
     } catch (e) {
@@ -82,9 +59,6 @@ export default function RenderPanel({ comp, onBusy }: { comp: Composition; onBus
       onBusy?.(false);
     }
   }
-
-  const total = steps.length;
-  const pct = total ? Math.round((done.size / total) * 100) : 0;
 
   return (
     <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -106,6 +80,36 @@ export default function RenderPanel({ comp, onBusy }: { comp: Composition; onBus
             ))}
           </div>
         </div>
+
+        {onPatchRenderOpts && (
+          <div className="mb-3 flex flex-wrap items-end gap-3">
+            <div className="min-w-[200px] flex-1">
+              <label className="mb-1 block text-xs text-muted">전환 효과</label>
+              <Select value={comp.renderOpts.transition || "default"} options={TRANSITION_OPTS} onChange={(v) => onPatchRenderOpts({ transition: v })} />
+            </div>
+            <div className="w-28">
+              <label className="mb-1 block text-xs text-muted">길이(초)</label>
+              <input
+                type="number"
+                min={0.2}
+                max={2}
+                step={0.1}
+                value={comp.renderOpts.transitionDurationSec ?? 0.4}
+                onChange={(e) => onPatchRenderOpts({ transitionDurationSec: Number(e.target.value) || 0.4 })}
+                className="w-full rounded-md border border-border bg-surface px-2 py-2 text-base outline-none focus:border-primary"
+              />
+            </div>
+            <div className="w-28">
+              <label className="mb-1 block text-xs text-muted">타이밍</label>
+              <Select
+                value={comp.renderOpts.transitionTiming ?? "linear"}
+                options={[{ value: "linear", label: "리니어" }, { value: "spring", label: "스프링" }]}
+                onChange={(v) => onPatchRenderOpts({ transitionTiming: v as "linear" | "spring" })}
+              />
+            </div>
+          </div>
+        )}
+
         <button
           onClick={render}
           disabled={!ready || rendering || !langs.length}
@@ -115,35 +119,24 @@ export default function RenderPanel({ comp, onBusy }: { comp: Composition; onBus
         </button>
         {err && <p className="mt-2 text-sm text-danger">{err}</p>}
 
-        {(rendering || done.size > 0) && (
-          <div className="mt-4">
-            <div className="mb-1 flex justify-between text-xs text-muted">
-              <span>진행 {done.size}/{total}</span>
-              <span>{pct}%</span>
-            </div>
-            <div className="mb-3 h-2 w-full overflow-hidden rounded-full bg-surface-muted">
-              <div className="h-full rounded-full bg-primary transition-all duration-300" style={{ width: `${pct}%` }} />
-            </div>
-            <ul className="flex flex-col gap-1">
-              {steps.map((s) => {
-                const st = done.has(s.key) ? "done" : active === s.key ? "active" : "pending";
-                return (
-                  <li key={s.key} className="flex items-center gap-2 text-sm">
-                    <span
-                      className={`grid h-5 w-5 place-items-center rounded-full text-[11px] ${
-                        st === "done" ? "bg-eli5 text-white" : st === "active" ? "bg-warning text-white" : "bg-surface-muted text-muted"
-                      }`}
-                    >
-                      {st === "done" ? "✓" : st === "active" ? <span className="h-2 w-2 animate-pulse rounded-full bg-white" /> : "○"}
-                    </span>
-                    <span className={st === "pending" ? "text-muted" : st === "active" ? "font-medium text-ink" : "text-ink"}>
-                      {s.label}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
+        {Object.keys(prog).length > 0 && (
+          <ul className="mt-4 flex flex-col gap-3">
+            {langs.map((l) => {
+              const pr = prog[l];
+              if (!pr) return null;
+              return (
+                <li key={l}>
+                  <div className="mb-1 flex justify-between text-xs">
+                    <span className="font-medium text-ink">{LANGUAGE_LABELS[l]} · {PHASE_LABEL[pr.phase] ?? pr.phase}</span>
+                    <span className="text-muted">{pr.pct}%</span>
+                  </div>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-surface-muted">
+                    <div className="h-full rounded-full bg-primary transition-all duration-300" style={{ width: `${pr.pct}%` }} />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </section>
 

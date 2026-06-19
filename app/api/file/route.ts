@@ -13,6 +13,8 @@ const MIME: Record<string, string> = {
   ".webp": "image/webp",
   ".gif": "image/gif",
   ".mp4": "video/mp4",
+  ".mp3": "audio/mpeg",
+  ".wav": "audio/wav",
   ".json": "application/json",
   ".txt": "text/plain; charset=utf-8",
 };

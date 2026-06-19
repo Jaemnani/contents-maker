@@ -20,11 +20,16 @@ export type ImageSource = "template" | "ai" | "pick";
 /** Main(body) comparison layout — user-selectable, previewed. */
 export type MainLayout = "split" | "panels" | "headline";
 
-/** Main(body) motion/effect style — user-selectable. */
-export type MotionStyle = "none" | "divider-only" | "kenburns-vs" | "spotlight-vs";
+/** Main(body) motion/effect style — user-selectable.
+ *  slide-reveal: full-frame A/B with a horizontal divider that slides over time
+ *  (emphasize A, then B). Split layout only; uses `revealRatio`. */
+export type MotionStyle = "none" | "divider-only" | "kenburns-vs" | "spotlight-vs" | "slide-reveal";
 
 /** Layout-B panel style — user-selectable. */
 export type PanelStyle = "rounded-shadow" | "square-border" | "rounded-flat";
+
+/** Slide-reveal direction: vertical (top/bottom) or horizontal (left/right). */
+export type RevealDir = "v" | "h";
 
 /** How to reconcile two video clips of different length. */
 export type VideoFit = "loop" | "trim" | "freeze" | "sequential";
@@ -41,6 +46,28 @@ export interface LocalizedText {
   ja?: string;
   en?: string;
 }
+
+/** Per-text styling for overlay text (cards, labels). */
+export type FontKey = "black" | "semibold" | "bebas";
+export type TextEffect = "shadow" | "outline" | "glow" | "plain";
+export interface TextStyle {
+  font?: FontKey;
+  size?: number;
+  color?: string; // hex, e.g. "#ffffff"
+  effect?: TextEffect;
+}
+
+export const FONT_LABELS: Record<FontKey, string> = {
+  black: "Pretendard Black",
+  semibold: "Pretendard SemiBold",
+  bebas: "Bebas Neue",
+};
+export const EFFECT_LABELS: Record<TextEffect, string> = {
+  shadow: "그림자",
+  outline: "외곽선",
+  glow: "글로우",
+  plain: "없음",
+};
 
 /** A reference to one generated asset anywhere under outputs/sources (cross-folder). */
 export interface AssetRef {
@@ -71,6 +98,7 @@ export interface CardElement {
   pos: TextPos | { x: number; y: number };
   text?: LocalizedText; // kind = text
   size?: number; // font px (text) or logo width px (logo)
+  style?: TextStyle; // kind = text — font/effect/color (size falls back to `size`)
   assetPath?: string; // outputs/-relative uploaded logo (kind = logo)
 }
 
@@ -85,11 +113,16 @@ export interface Stage {
   // start card copy
   headline?: LocalizedText;
   sub?: LocalizedText;
+  headlineStyle?: TextStyle;
+  subStyle?: TextStyle;
   // end card elements (logo + text blocks)
   elements?: CardElement[];
   // ---- main only ----
   layout?: MainLayout;
   motionStyle?: MotionStyle;
+  revealRatio?: number; // slide-reveal: A's max share (0.8=8:2 … 0.5=5:5/static)
+  revealDir?: RevealDir; // slide-reveal direction (default "v")
+  showDivider?: boolean; // slide-reveal: draw the moving boundary line
   panelStyle?: PanelStyle;
   videoFit?: VideoFit;
   bodyDurationSec?: number; // image compare default 6; video uses source length
@@ -97,15 +130,50 @@ export interface Stage {
   bRef?: AssetRef;
   showLabels?: boolean;
   labelPos?: LabelPos;
+  labelStyle?: TextStyle;
   aLabel?: string;
   bLabel?: string;
 }
 
-/** ffmpeg render knobs. v1 is muted — no audio flags. */
+/** Scene transition presets (Remotion @remotion/transitions). */
+export type TransitionPreset =
+  | "default"
+  | "fade"
+  | "slide"
+  | "wipe"
+  | "flip"
+  | "clockWipe"
+  | "iris"
+  | "dissolve"
+  | "zoomInOut"
+  | "zoomBlur"
+  | "dreamyZoom"
+  | "filmBurn"
+  | "linearBlur";
+
+export const TRANSITION_LABELS: Record<TransitionPreset, string> = {
+  default: "기본(슬라이드→페이드)",
+  fade: "페이드",
+  slide: "슬라이드",
+  wipe: "와이프",
+  flip: "플립",
+  clockWipe: "시계 와이프",
+  iris: "아이리스(원형)",
+  dissolve: "디졸브",
+  zoomInOut: "줌 인/아웃",
+  zoomBlur: "줌 블러",
+  dreamyZoom: "드리미 줌",
+  filmBurn: "필름 번",
+  linearBlur: "리니어 블러",
+};
+
+/** Render knobs. v1 is muted. */
 export interface RenderOpts {
   preset: string; // libx264 preset, e.g. "slow"
   crf: number; // e.g. 18
-  transition: string; // segment transition style id (extensible registry)
+  transition: string; // TransitionPreset id (global, applied to scene boundaries)
+  transitionTiming?: "linear" | "spring";
+  transitionDurationSec?: number; // default 0.4
 }
 
 export interface Composition {
@@ -113,7 +181,9 @@ export interface Composition {
   sourceType: SourceType;
   primaryLanguage: Language; // UI + AI-prompt default language
   renderLanguages: Language[]; // languages to export (default [primaryLanguage])
-  topicId: string;
+  topicId: string; // start/end card TEMPLATE id (stays a real TOPICS id; never overwritten by a recommendation)
+  topicTitle?: string; // display-only subject label for the recent list (from a recommended topic); independent of topicId
+  comparePrompt?: string; // suggested prompt to feed both models in the MAIN comparison pair (from trend curation)
   createdAt: string;
   updatedAt: string;
   stages: Stage[];

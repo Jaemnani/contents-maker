@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type {
   GenResult, ImageParams, Language, Modality, SelectionMode, TextParams, VideoParams,
@@ -304,12 +305,12 @@ export default function Home() {
           </h1>
           <p className="text-sm text-muted">같은 프롬프트 × 여러 AI로 소스를 미리 생성 — 위자드에서 불러와 사용</p>
         </div>
-        <a
+        <Link
           href="/"
           className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm font-medium text-muted transition-colors duration-200 hover:border-empathy hover:text-ink"
         >
           ← 숏폼 위자드
-        </a>
+        </Link>
       </header>
 
       {error && (

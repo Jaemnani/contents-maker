@@ -8,7 +8,6 @@ import { promises as fs } from "fs";
 import path from "path";
 import type { GenResult, Language, Modality } from "@/lib/types";
 import { getOpenRouterKey } from "@/lib/env";
-import { makePoster } from "@/lib/render/thumb";
 
 export const OUTPUTS_ROOT = path.join(process.cwd(), "outputs");
 export const SOURCES_ROOT = path.join(OUTPUTS_ROOT, "sources");
@@ -103,20 +102,10 @@ async function writeVideoResult(dir: string, base: string, r: GenResult, files: 
   const res = await fetch(r.videoUrl, { headers });
   if (!res.ok) return;
   const fname = `${base}.mp4`;
-  const abs = path.join(dir, fname);
-  await fs.writeFile(abs, Buffer.from(await res.arrayBuffer()));
+  await fs.writeFile(path.join(dir, fname), Buffer.from(await res.arrayBuffer()));
   files.push(fname);
-  // first-frame poster for history grids (best-effort).
-  let thumb: string | undefined;
-  try {
-    const thumbName = `${base}.thumb.jpg`;
-    await makePoster(abs, path.join(dir, thumbName));
-    thumb = thumbName;
-    files.push(thumbName);
-  } catch {
-    /* poster optional */
-  }
-  metaFiles.push({ file: fname, model: r.model, thumb });
+  // No system-ffmpeg poster — the UI renders a <video> element thumbnail for videos.
+  metaFiles.push({ file: fname, model: r.model });
 }
 
 /** Persist a generation batch (one prompt, N models, one modality) as a single source folder. */

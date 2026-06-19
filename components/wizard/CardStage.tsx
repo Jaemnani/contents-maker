@@ -9,8 +9,10 @@ import { LANGUAGE_LABELS } from "@/lib/channels";
 import { uploadFile, assetUrl, translateText } from "@/lib/client/wizard";
 import Select, { type SelectOption } from "@/components/ui/Select";
 import StageImageChooser from "@/components/wizard/StageImageChooser";
+import TextStyleControls from "@/components/wizard/TextStyleControls";
 
 const inputCls = "w-full rounded-md border border-border bg-surface px-3 py-2 text-base outline-none focus:border-primary";
+const taCls = `${inputCls} resize-y leading-snug`;
 
 const POS_OPTS: SelectOption[] = [
   { value: "center", label: "중앙" },
@@ -132,12 +134,14 @@ export default function CardStage({
         {!isEnd ? (
           <>
             <div>
-              <label className="mb-1 block text-xs text-muted">헤드라인 ({lang})</label>
-              <input className={inputCls} value={stage.headline?.[lang] ?? ""} onChange={(e) => setLT("headline", e.target.value)} />
+              <label className="mb-1 block text-xs text-muted">헤드라인 ({lang}) · 줄바꿈 가능</label>
+              <textarea rows={2} className={taCls} value={stage.headline?.[lang] ?? ""} onChange={(e) => setLT("headline", e.target.value)} />
+              <TextStyleControls value={stage.headlineStyle} defaultSize={92} onChange={(s) => onPatch({ headlineStyle: s })} />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-muted">서브 문구 ({lang})</label>
-              <input className={inputCls} value={stage.sub?.[lang] ?? ""} onChange={(e) => setLT("sub", e.target.value)} />
+              <label className="mb-1 block text-xs text-muted">서브 문구 ({lang}) · 줄바꿈 가능</label>
+              <textarea rows={2} className={taCls} value={stage.sub?.[lang] ?? ""} onChange={(e) => setLT("sub", e.target.value)} />
+              <TextStyleControls value={stage.subStyle} defaultSize={44} onChange={(s) => onPatch({ subStyle: s })} />
             </div>
           </>
         ) : (
@@ -147,12 +151,14 @@ export default function CardStage({
                 <input type="checkbox" checked={cta?.enabled ?? false} onChange={(e) => updateEl("cta", { enabled: e.target.checked })} className="accent-primary" />
                 CTA 문구 ({lang})
               </label>
-              <input
-                className={inputCls}
+              <textarea
+                rows={2}
+                className={taCls}
                 value={cta?.text?.[lang] ?? ""}
                 onChange={(e) => updateEl("cta", { text: { ...(cta?.text ?? {}), [lang]: e.target.value } })}
                 placeholder="예: 댓글로 골라줘!"
               />
+              <TextStyleControls value={cta?.style} defaultSize={64} onChange={(s) => updateEl("cta", { style: s })} />
               <div className="mt-1 flex flex-wrap gap-1">
                 {CTA_PRESETS.map((p) => (
                   <button

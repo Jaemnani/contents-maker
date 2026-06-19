@@ -1,6 +1,6 @@
 "use client";
 // Wizard orchestrator: holds the Composition, free-navigation stepbar, per-stage save.
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Composition, Stage, StageType } from "@/lib/composition-types";
 import { STAGE_LABELS } from "@/lib/composition-types";
 import { useModels } from "@/hooks/useModels";
@@ -45,18 +45,50 @@ export default function Wizard({ comp: initial, onExit }: { comp: Composition; o
     return () => window.removeEventListener("beforeunload", h);
   }, [busy]);
 
+  // Latest composition + a debounced save, so rapid edits (typing) don't fire a POST per
+  // keystroke or race each other. compRef always holds the newest value to persist.
+  const compRef = useRef(comp);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function setBoth(next: Composition) {
+    compRef.current = next;
+    setComp(next);
+  }
+
+  function scheduleSave() {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    setSaving(true);
+    saveTimer.current = setTimeout(() => {
+      saveTimer.current = null;
+      saveComposition(compRef.current).then(() => setSaving(false)).catch(() => setSaving(false));
+    }, 400);
+  }
+
+  // Adopt a server-returned composition (already persisted) — no extra save.
   function applyComp(c: Composition) {
-    setComp(c);
+    setBoth(c);
   }
 
   function patchStage(stageId: StageType, patch: Partial<Stage>) {
-    setComp((prev) => {
-      const next: Composition = { ...prev, stages: prev.stages.map((s) => (s.id === stageId ? { ...s, ...patch } : s)) };
-      setSaving(true);
-      saveComposition(next).then(() => setSaving(false)).catch(() => setSaving(false));
-      return next;
-    });
+    setBoth({ ...compRef.current, stages: compRef.current.stages.map((s) => (s.id === stageId ? { ...s, ...patch } : s)) });
+    scheduleSave();
   }
+
+  function patchRenderOpts(patch: Partial<Composition["renderOpts"]>) {
+    setBoth({ ...compRef.current, renderOpts: { ...compRef.current.renderOpts, ...patch } });
+    scheduleSave();
+  }
+
+  // Flush any pending save on unmount (e.g. navigating back to the list).
+  useEffect(
+    () => () => {
+      if (saveTimer.current) {
+        clearTimeout(saveTimer.current);
+        saveComposition(compRef.current).catch(() => {});
+      }
+    },
+    []
+  );
 
   const stage = (id: StageType) => comp.stages.find((s) => s.id === id)!;
 
@@ -94,7 +126,7 @@ export default function Wizard({ comp: initial, onExit }: { comp: Composition; o
       {step === "start" && <CardStage comp={comp} stage={stage("start")} imageModels={imageModels} onPatch={(p) => patchStage("start", p)} onComp={applyComp} />}
       {step === "main" && <MainStage comp={comp} stage={stage("main")} imageModels={imageModels} onPatch={(p) => patchStage("main", p)} onComp={applyComp} />}
       {step === "end" && <CardStage comp={comp} stage={stage("end")} imageModels={imageModels} onPatch={(p) => patchStage("end", p)} onComp={applyComp} />}
-      {step === "render" && <RenderPanel comp={comp} onBusy={setBusy} />}
+      {step === "render" && <RenderPanel comp={comp} onBusy={setBusy} onPatchRenderOpts={patchRenderOpts} />}
 
       <div className="mt-6 flex justify-between">
         <button

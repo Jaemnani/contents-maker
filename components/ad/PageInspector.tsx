@@ -1,0 +1,258 @@
+"use client";
+// Per-page inspector: source type/source, the 3 template dropdowns (catalog-driven,
+// filtered by compatibleSourceTypes), caption/VO text, duration override + warnings.
+import type { AdPage, AdProject } from "@/lib/ad/schema";
+import Select, { type SelectOption } from "@/components/ui/Select";
+import type { TemplateMeta } from "@/remotion/ad/types";
+import SourceChooser from "@/components/ad/SourceChooser";
+import TemplatePicker from "@/components/ad/TemplatePicker";
+import PagePreview from "@/components/ad/PagePreview";
+import { registry, DEFAULT_VISUAL, DEFAULT_MOTION } from "@/remotion/ad/templates/registry";
+import { visualSourceSlots } from "@/remotion/ad/templates/meta";
+import { fileUrl } from "@/lib/client/wizard";
+
+const CAPTION_MAX = 20;
+
+function templateMetas(cat: "visual" | "motion", sourceType: "image" | "video"): TemplateMeta[] {
+  return Object.values(registry[cat])
+    .map((t) => t.meta)
+    .filter((m) => (m.compatibleSourceTypes ?? ["image", "video"]).includes(sourceType));
+}
+const transitionMetas: TemplateMeta[] = Object.values(registry.transition).map((t) => t.meta);
+
+// bundled title fonts (remotion/lib/fonts.ts). Bebas Neue is latin-only (영문 임팩트).
+const TITLE_FONTS: SelectOption[] = [
+  { value: "Pretendard", label: "프리텐다드 (한글·영문)" },
+  { value: "Bebas Neue", label: "베바스 (영문 전용·임팩트)" },
+];
+
+export default function PageInspector({
+  project,
+  page,
+  imageModels,
+  onPatch,
+  onProject,
+  onProductName,
+  onTts,
+  ttsBusy,
+  onFlush,
+}: {
+  project: AdProject;
+  page: AdPage;
+  imageModels: SelectOption[];
+  onPatch: (patch: Partial<AdPage>) => void;
+  onProject: (p: AdProject) => void;
+  onProductName: (name: string) => void;
+  onTts?: (pageId: string) => void;
+  ttsBusy?: boolean;
+  onFlush?: () => Promise<void>;
+}) {
+  const visMetas = templateMetas("visual", page.sourceType);
+  const motMetas = templateMetas("motion", page.sourceType);
+  const brand = project.product.brandColor;
+
+  function switchSourceType(t: "image" | "video") {
+    if (t === page.sourceType) return;
+    const visOk = (registry.visual[page.visualTemplateId]?.meta.compatibleSourceTypes ?? ["image", "video"]).includes(t);
+    const motOk = (registry.motion[page.motionTemplateId]?.meta.compatibleSourceTypes ?? ["image", "video"]).includes(t);
+    onPatch({
+      sourceType: t,
+      source: { kind: "none" },
+      sourceB: { kind: "none" },
+      sourceC: { kind: "none" },
+      sourceD: { kind: "none" },
+      visualTemplateId: visOk ? page.visualTemplateId : DEFAULT_VISUAL,
+      motionTemplateId: motOk ? page.motionTemplateId : DEFAULT_MOTION,
+    });
+  }
+
+  const slots = visualSourceSlots(page.visualTemplateId);
+  const hasTitle = !!registry.visual[page.visualTemplateId]?.meta.hasTitle;
+  const isCompare = page.visualTemplateId === "compare-2up";
+
+  const voOverrun = page.durationOverrideSec != null && page.voAudio != null && page.durationOverrideSec < page.voAudio.durationSec;
+
+  return (
+    <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_200px]">
+      {/* LEFT: the editing controls (the important part comes first) */}
+      <div className="flex flex-col gap-4">
+        {/* product name — global, but edited here (shows in the '제목 강조' layout badge) */}
+        <section>
+          <div className="mb-1 text-xs font-semibold text-muted">제품명 <span className="font-normal">(전체 공통 · ‘제목 강조’ 레이아웃 배지)</span></div>
+          <input
+            value={project.product.name}
+            onChange={(e) => onProductName(e.target.value)}
+            placeholder="예: TapNow"
+            className="w-full rounded-md border border-border bg-surface px-3 py-1.5 text-base outline-none focus:border-primary"
+          />
+        </section>
+
+        {/* source type + source */}
+        <section>
+          <div className="mb-1.5 flex items-center gap-3">
+            <span className="text-xs font-semibold text-muted">소스</span>
+            <div className="flex gap-1">
+              {(["image", "video"] as const).map((t) => (
+                <button key={t} onClick={() => switchSourceType(t)} className={`rounded-md border px-2.5 py-1 text-xs transition-all duration-200 ${page.sourceType === t ? "border-empathy bg-empathy/10 text-ink" : "border-border text-muted hover:border-empathy"}`}>
+                  {t === "image" ? "이미지" : "영상"}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className={slots.length > 1 ? "grid gap-3 sm:grid-cols-2" : "flex flex-col gap-3"}>
+            {slots.map((s, i) => {
+              const compareField = isCompare && s.key === "A" ? "compareLabelA" : isCompare && s.key === "B" ? "compareLabelB" : null;
+              return (
+                <div key={s.key}>
+                  <div className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold text-empathy">
+                    {slots.length > 1 && <span className="grid h-4 w-4 place-items-center rounded bg-empathy/15 text-[10px]">{i + 1}</span>}
+                    {s.label}
+                  </div>
+                  <SourceChooser project={project} page={page} imageModels={imageModels} onPatch={onPatch} onProject={onProject} onFlush={onFlush} slot={s.key} />
+                  {compareField && (
+                    <input
+                      value={(page[compareField] as string | undefined) ?? ""}
+                      onChange={(e) => onPatch({ [compareField]: e.target.value || undefined } as Partial<AdPage>)}
+                      placeholder={`${s.key} 옆 제목 (예: ${s.key === "A" ? "변환 전" : "변환 후"})`}
+                      className="mt-1.5 w-full rounded-md border border-border bg-surface px-2 py-1.5 text-sm outline-none focus:border-primary"
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* templates — compact thumb pickers, stacked vertically (레이아웃 → 움직임 → 전환) */}
+        <section className="flex flex-col gap-3">
+          <div>
+            <div className="mb-1 text-xs font-semibold text-muted">레이아웃</div>
+            <TemplatePicker category="visual" options={visMetas} value={page.visualTemplateId} onChange={(v) => onPatch({ visualTemplateId: v })} brand={brand} compact />
+          </div>
+          <div>
+            <div className="mb-1 text-xs font-semibold text-muted">움직임</div>
+            <TemplatePicker category="motion" options={motMetas} value={page.motionTemplateId} onChange={(v) => onPatch({ motionTemplateId: v })} brand={brand} compact />
+          </div>
+          <div>
+            <div className="mb-1 text-xs font-semibold text-muted">전환 <span className="font-normal">(다음으로)</span></div>
+            <TemplatePicker category="transition" options={transitionMetas} value={page.transitionTemplateId} onChange={(v) => onPatch({ transitionTemplateId: v })} brand={brand} compact />
+          </div>
+        </section>
+
+        {/* caption / vo */}
+        <section className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <div className="mb-1 flex items-center justify-between text-xs text-muted">
+              <span>{hasTitle ? "제목 (caption)" : "자막 (caption)"}</span>
+              <span className={page.caption.length > CAPTION_MAX ? "text-warning" : ""}>
+                {page.caption.length}/{CAPTION_MAX}
+              </span>
+            </div>
+            <textarea value={page.caption} onChange={(e) => onPatch({ caption: e.target.value })} className="h-14 w-full resize-y rounded-md border border-border bg-surface p-2 text-base outline-none focus:border-primary" />
+            {hasTitle && (
+              <div className="mt-1.5 flex flex-col gap-1.5 rounded-md border border-border bg-surface-muted/30 p-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-12 shrink-0 text-[11px] text-muted">위치</span>
+                  <div className="flex gap-1">
+                    {([["top", "상단"], ["middle", "중단"], ["bottom", "하단"]] as const).map(([v, label]) => {
+                      const on = (page.titlePosition ?? "top") === v;
+                      return (
+                        <button key={v} onClick={() => onPatch({ titlePosition: v })} className={`rounded-md border px-2.5 py-1 text-[11px] transition-all duration-200 ${on ? "border-empathy bg-empathy/10 text-ink" : "border-border text-muted hover:border-empathy"}`}>
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-12 shrink-0 text-[11px] text-muted">글꼴</span>
+                  <Select
+                    value={page.titleFont || "Pretendard"}
+                    options={TITLE_FONTS}
+                    onChange={(v) => onPatch({ titleFont: v })}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-12 shrink-0 text-[11px] text-muted">크기</span>
+                  <input
+                    type="range" min={40} max={140} step={2}
+                    value={page.titleSize ?? 84}
+                    onChange={(e) => onPatch({ titleSize: parseInt(e.target.value, 10) })}
+                    className="flex-1"
+                  />
+                  <span className="w-9 shrink-0 text-right text-[11px] text-muted">{page.titleSize ?? 84}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-12 shrink-0 text-[11px] text-muted">굵기</span>
+                  <div className="flex gap-1">
+                    {([[400, "보통"], [600, "약간"], [900, "굵게"]] as const).map(([w, label]) => {
+                      const on = (page.titleWeight ?? 900) === w;
+                      return (
+                        <button key={w} onClick={() => onPatch({ titleWeight: w })} className={`rounded-md border px-2.5 py-1 text-[11px] transition-all duration-200 ${on ? "border-empathy bg-empathy/10 text-ink" : "border-border text-muted hover:border-empathy"}`}>
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <div>
+            <div className="mb-1 flex items-center justify-between text-xs text-muted">
+              <span>내레이션 (VO)</span>
+              {onTts && (
+                <button onClick={() => onTts(page.id)} disabled={ttsBusy || !page.vo.trim()} className="rounded border border-border px-2 py-0.5 text-[11px] text-ink transition-all duration-200 hover:border-empathy disabled:opacity-40">
+                  {ttsBusy ? "생성 중…" : page.voAudio ? "VO 재생성" : "VO 생성"}
+                </button>
+              )}
+            </div>
+            <textarea value={page.vo} onChange={(e) => onPatch({ vo: e.target.value })} className="h-14 w-full resize-y rounded-md border border-border bg-surface p-2 text-base outline-none focus:border-primary" />
+            {page.voAudio && (
+              <div className="mt-1.5 flex items-center gap-2">
+                <audio controls src={fileUrl(page.voAudio.path)} className="h-8 w-full" />
+                <span className="shrink-0 text-[11px] text-muted">{page.voAudio.durationSec.toFixed(1)}s</span>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* duration */}
+        <section>
+          <div className="mb-1 text-xs text-muted">페이지 길이</div>
+          <div className="flex items-center gap-2">
+            <span className={`rounded-full px-2 py-0.5 text-[11px] ${page.durationOverrideSec == null ? "bg-empathy/15 text-empathy" : "bg-ink/10 text-muted"}`}>
+              {page.durationOverrideSec == null ? (page.voAudio ? "VO 자동" : "기본값") : "수동"}
+            </span>
+            <input
+              type="number"
+              min={0.5}
+              step={0.5}
+              value={page.durationOverrideSec ?? ""}
+              placeholder={page.voAudio ? page.voAudio.durationSec.toFixed(1) : "3"}
+              onChange={(e) => {
+                const v = parseFloat(e.target.value);
+                onPatch({ durationOverrideSec: Number.isFinite(v) && v > 0 ? v : undefined });
+              }}
+              className="w-24 rounded-md border border-border bg-surface px-2 py-1.5 text-base outline-none focus:border-primary"
+            />
+            <span className="text-xs text-muted">초 (비우면 자동)</span>
+          </div>
+          {voOverrun && (
+            <p className="mt-1.5 text-xs text-warning">
+              ⚠️ 수동 길이가 VO({page.voAudio!.durationSec.toFixed(1)}s)보다 짧습니다 — VO가 다음 페이지로 이어집니다.
+            </p>
+          )}
+        </section>
+      </div>
+
+      {/* RIGHT: this-page preview (reference, alongside — not pushing controls down) */}
+      <aside>
+        <div className="xl:sticky xl:top-4">
+          <div className="mb-1.5 text-xs font-semibold text-muted">이 페이지</div>
+          <PagePreview project={project} page={page} />
+        </div>
+      </aside>
+    </div>
+  );
+}

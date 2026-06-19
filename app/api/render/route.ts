@@ -1,13 +1,13 @@
-// POST /api/render — render a composition to muted 1080×1920 mp4(s), streaming step
-// progress as Server-Sent Events. ffmpeg is CPU-heavy → serialized with pLimit(1).
+// POST /api/render — render a composition to muted 1080×1920 mp4(s) via Remotion.
+// SSE progress per language. ffmpeg-free (Remotion bundles its own).
 import { z } from "zod";
 import pLimit from "p-limit";
-import { renderComposition } from "@/lib/render/engine";
+import { renderRemotion } from "@/lib/render-remotion/engine";
 import { readComposition } from "@/lib/post/composition";
 import type { Language } from "@/lib/types";
 
 export const runtime = "nodejs";
-export const maxDuration = 300;
+export const maxDuration = 600;
 
 const limit = pLimit(1);
 
@@ -23,12 +23,11 @@ export async function POST(req: Request) {
   } catch (e) {
     return Response.json({ error: { message: (e as Error).message, status: 400 } }, { status: 400 });
   }
+  const assetBase = new URL(req.url).origin;
 
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       const enc = new TextEncoder();
-      // Swallow enqueue errors: if the client disconnects (navigates away), keep rendering
-      // server-side to completion — the result is still persisted via setRender.
       const send = (obj: unknown) => {
         try {
           controller.enqueue(enc.encode(`data: ${JSON.stringify(obj)}\n\n`));
@@ -44,7 +43,9 @@ export async function POST(req: Request) {
         for (const lang of langs) {
           send({ type: "lang-start", language: lang });
           const rel = await limit(() =>
-            renderComposition(body.compId, lang, (ev) => send({ type: "progress", ...ev }))
+            renderRemotion(body.compId, lang, assetBase, ({ progress, stage }) =>
+              send({ type: "progress", language: lang, phase: stage, pct: Math.round(progress * 100) })
+            )
           );
           renders[lang] = rel;
           send({ type: "lang-done", language: lang, path: rel });

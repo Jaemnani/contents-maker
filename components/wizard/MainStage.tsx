@@ -8,12 +8,20 @@ import { comparePair, assetUrl, assetThumbUrl } from "@/lib/client/wizard";
 import Select, { type SelectOption } from "@/components/ui/Select";
 import HistoryPicker from "@/components/HistoryPicker";
 import StageImageChooser from "@/components/wizard/StageImageChooser";
+import TextStyleControls from "@/components/wizard/TextStyleControls";
 
 const MOTION_OPTS: SelectOption[] = [
   { value: "kenburns-vs", label: "VS + 켄번즈 (기본)" },
   { value: "spotlight-vs", label: "VS + 스포트라이트" },
+  { value: "slide-reveal", label: "슬라이드 공개 (비율 이동)" },
   { value: "divider-only", label: "분할선만" },
   { value: "none", label: "정적" },
+];
+const REVEAL_RATIOS = [
+  { v: 0.8, l: "8:2" },
+  { v: 0.7, l: "7:3" },
+  { v: 0.6, l: "6:4" },
+  { v: 0.5, l: "5:5" },
 ];
 const PANEL_OPTS: SelectOption[] = [
   { value: "rounded-shadow", label: "둥근+그림자" },
@@ -60,7 +68,7 @@ export default function MainStage({
   const [tab, setTab] = useState<"generate" | "pick">("generate");
   const [modelA, setModelA] = useState(imageModels[0]?.value ?? "");
   const [modelB, setModelB] = useState(imageModels[1]?.value ?? "");
-  const [prompt, setPrompt] = useState("");
+  const [prompt, setPrompt] = useState(comp.comparePrompt ?? "");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [pick, setPick] = useState<null | "a" | "b">(null);
@@ -162,6 +170,13 @@ export default function MainStage({
             <input value={stage.bLabel ?? ""} onChange={(e) => onPatch({ bLabel: e.target.value })} placeholder="B 라벨" className="w-40 rounded-md border border-border bg-surface px-2 py-1 text-sm" />
           )}
         </div>
+
+        {(stage.showLabels ?? true) && (
+          <div className="mt-2">
+            <div className="mb-1 text-xs text-muted">라벨 스타일</div>
+            <TextStyleControls value={stage.labelStyle} defaultSize={40} onChange={(s) => onPatch({ labelStyle: s })} />
+          </div>
+        )}
       </section>
 
       {/* layout + options */}
@@ -181,8 +196,54 @@ export default function MainStage({
         <div className="flex flex-wrap gap-3">
           <div className="min-w-[200px] flex-1">
             <label className="mb-1 block text-xs text-muted">연출</label>
-            <Select value={stage.motionStyle ?? "kenburns-vs"} options={MOTION_OPTS} onChange={(v) => onPatch({ motionStyle: v as Stage["motionStyle"] })} />
+            <Select
+              value={stage.motionStyle ?? "kenburns-vs"}
+              options={MOTION_OPTS}
+              onChange={(v) =>
+                onPatch({
+                  motionStyle: v as Stage["motionStyle"],
+                  // slide-reveal is a split-layout effect — switch layout to keep it visible.
+                  ...(v === "slide-reveal" && layout !== "split" ? { layout: "split" as const } : {}),
+                })
+              }
+            />
           </div>
+          {stage.motionStyle === "slide-reveal" && (
+            <>
+              <div>
+                <label className="mb-1 block text-xs text-muted">방향</label>
+                <div className="flex gap-1">
+                  {([{ v: "v", l: "상하" }, { v: "h", l: "좌우" }] as const).map((d) => (
+                    <button
+                      key={d.v}
+                      onClick={() => onPatch({ revealDir: d.v })}
+                      className={`rounded-md px-3 py-2 text-sm transition-colors duration-200 ${(stage.revealDir ?? "v") === d.v ? "bg-primary text-white" : "border border-border text-muted hover:border-empathy"}`}
+                    >
+                      {d.l}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-muted">시작 비율 (A:B → 반전)</label>
+                <div className="flex gap-1">
+                  {REVEAL_RATIOS.map((r) => (
+                    <button
+                      key={r.v}
+                      onClick={() => onPatch({ revealRatio: r.v })}
+                      className={`rounded-md px-2 py-2 text-sm transition-colors duration-200 ${(stage.revealRatio ?? 0.8) === r.v ? "bg-primary text-white" : "border border-border text-muted hover:border-empathy"}`}
+                    >
+                      {r.l}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <label className="flex items-end gap-2 pb-2 text-sm text-muted">
+                <input type="checkbox" checked={stage.showDivider ?? false} onChange={(e) => onPatch({ showDivider: e.target.checked })} className="accent-primary" />
+                경계선 표시
+              </label>
+            </>
+          )}
           {layout === "panels" && (
             <div className="min-w-[180px] flex-1">
               <label className="mb-1 block text-xs text-muted">패널 스타일</label>

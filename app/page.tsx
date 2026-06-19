@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import type { Composition, SourceType } from "@/lib/composition-types";
 import type { Language } from "@/lib/types";
 import { LANGUAGE_LABELS } from "@/lib/channels";
-import { TOPICS, DEFAULT_TOPIC_ID } from "@/lib/render/strings";
-import { createComposition, listCompositions, getComposition, assetThumbUrl } from "@/lib/client/wizard";
+import { TOPICS, DEFAULT_TOPIC_ID, pickText } from "@/lib/render/strings";
+import { createComposition, saveComposition, listCompositions, getComposition, assetThumbUrl, type TopicCandidate } from "@/lib/client/wizard";
 import Wizard from "@/components/wizard/Wizard";
+import TopicSuggest from "@/components/wizard/TopicSuggest";
 
 const LANGS: Language[] = ["ko", "ja", "en"];
 
@@ -16,6 +17,7 @@ export default function Home() {
   const [sourceType, setSourceType] = useState<SourceType>("image");
   const [language, setLanguage] = useState<Language>("ko");
   const [topicId, setTopicId] = useState<string>(DEFAULT_TOPIC_ID);
+  const [chosen, setChosen] = useState<TopicCandidate | null>(null);
   const [creating, setCreating] = useState(false);
 
   function refresh() {
@@ -28,7 +30,16 @@ export default function Home() {
   async function create() {
     setCreating(true);
     try {
-      setComp(await createComposition(sourceType, language, topicId));
+      // Start/end cards always use the selected topic TEMPLATE. A recommended topic only
+      // supplies the main comparison-pair prompt (+ a readable label for the recent list).
+      const c = await createComposition(sourceType, language, topicId);
+      if (chosen) {
+        c.comparePrompt = chosen.comparePrompt;
+        c.topicTitle = pickText(chosen.headline, language);
+        setComp(await saveComposition(c));
+      } else {
+        setComp(c);
+      }
     } finally {
       setCreating(false);
     }
@@ -45,9 +56,14 @@ export default function Home() {
           </h1>
           <p className="text-sm text-muted">같은 프롬프트 다른 AI — 9:16 비교 숏폼</p>
         </div>
-        <a href="/studio" className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm font-medium text-muted transition-colors duration-200 hover:border-empathy hover:text-ink">
-          Source Studio →
-        </a>
+        <div className="flex gap-2">
+          <a href="/ad" className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm font-medium text-muted transition-colors duration-200 hover:border-empathy hover:text-ink">
+            광고 메이커 →
+          </a>
+          <a href="/studio" className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm font-medium text-muted transition-colors duration-200 hover:border-empathy hover:text-ink">
+            Source Studio →
+          </a>
+        </div>
       </header>
 
       <section className="mb-8 rounded-2xl border border-border bg-surface p-5">
@@ -74,7 +90,7 @@ export default function Home() {
             </div>
           </div>
           <div>
-            <div className="mb-1 text-xs text-muted">주제</div>
+            <div className="mb-1 text-xs text-muted">주제 템플릿 <span className="text-[10px]">(시작·끝 카드)</span></div>
             <div className="flex gap-2">
               {Object.values(TOPICS).map((t) => (
                 <button key={t.id} onClick={() => setTopicId(t.id)} className={`rounded-md border px-4 py-2 text-sm transition-all duration-200 ${topicId === t.id ? "border-empathy bg-empathy/10 text-ink" : "border-border text-muted hover:border-empathy"}`}>
@@ -87,6 +103,13 @@ export default function Home() {
             {creating ? "생성 중…" : "시작 →"}
           </button>
         </div>
+
+        <TopicSuggest language={language} chosen={chosen} onPick={setChosen} />
+        {chosen && (
+          <p className="mt-2 text-xs text-empathy">
+            선택된 주제: <span className="font-semibold">{pickText(chosen.headline, language)}</span> — 본론 비교 쌍 생성 프롬프트로 사용됩니다. (시작·끝 카드는 템플릿 그대로)
+          </p>
+        )}
       </section>
 
       <section>
@@ -113,7 +136,7 @@ export default function Home() {
                     )}
                   </div>
                   <div className="px-2 py-1.5">
-                    <div className="truncate text-xs font-medium text-ink">{TOPICS[c.topicId]?.label || c.compId}</div>
+                    <div className="truncate text-xs font-medium text-ink">{c.topicTitle || TOPICS[c.topicId]?.label || c.compId}</div>
                     <div className="text-[11px] text-muted">{c.sourceType} · {new Date(c.createdAt).toLocaleString()}</div>
                   </div>
                 </button>

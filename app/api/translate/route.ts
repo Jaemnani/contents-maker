@@ -52,14 +52,13 @@ export async function POST(req: Request) {
   }
   try {
     const model = cheapestTextModel();
-    const translations: Partial<Record<Language, string>> = {};
-    for (const lang of p.to) {
-      if (lang === p.from) {
-        translations[lang] = p.text;
-        continue;
-      }
-      translations[lang] = (await translateOne(model, p.text, p.from, lang, req.signal)) || p.text;
-    }
+    const entries = await Promise.all(
+      p.to.map(async (lang): Promise<[Language, string]> => {
+        if (lang === p.from) return [lang, p.text];
+        return [lang, (await translateOne(model, p.text, p.from, lang, req.signal)) || p.text];
+      })
+    );
+    const translations = Object.fromEntries(entries) as Partial<Record<Language, string>>;
     return Response.json({ translations, model });
   } catch (e) {
     const status = e instanceof OpenRouterError ? e.status : 500;

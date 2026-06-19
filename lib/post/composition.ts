@@ -107,7 +107,8 @@ export async function listCompositions(): Promise<Composition[]> {
   try {
     types = (await fs.readdir(RESULTS_ROOT, { withFileTypes: true }))
       .filter((e) => e.isDirectory())
-      .map((e) => e.name);
+      .map((e) => e.name)
+      .filter((t) => t !== "ad"); // ad projects live here too but have their own store (lib/ad/store.ts)
   } catch {
     return [];
   }
@@ -122,7 +123,8 @@ export async function listCompositions(): Promise<Composition[]> {
     }
     for (const ts of stamps) {
       try {
-        out.push(await readComposition(path.posix.join(type, ts)));
+        const comp = await readComposition(path.posix.join(type, ts));
+        if (Array.isArray(comp.stages)) out.push(comp); // shape guard (foreign index.json)
       } catch {
         /* skip unreadable */
       }

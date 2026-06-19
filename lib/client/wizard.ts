@@ -1,7 +1,8 @@
 // Client-side API helpers for the wizard. (Browser fetch wrappers.)
 "use client";
-import type { Composition, AssetRef, SourceType } from "@/lib/composition-types";
+import type { Composition, AssetRef, SourceType, LocalizedText } from "@/lib/composition-types";
 import type { Language } from "@/lib/types";
+import type { TrendItem } from "@/lib/trends/types";
 
 async function jsonOrThrow(res: Response) {
   const d = await res.json().catch(() => ({}));
@@ -90,7 +91,7 @@ export async function translateText(text: string, from: Language, to: Language[]
   return d.translations ?? {};
 }
 
-export interface SourceAsset extends AssetRef {}
+export type SourceAsset = AssetRef;
 export async function listSources(modality: SourceType, opts: { samePromptAs?: string; model?: string; q?: string } = {}): Promise<{
   assets: AssetRef[]; prompts: { prompt: string; count: number }[]; models: string[];
 }> {
@@ -101,9 +102,45 @@ export async function listSources(modality: SourceType, opts: { samePromptAs?: s
   return jsonOrThrow(await fetch(`/api/sources?${sp.toString()}`));
 }
 
+// ---- Trend → topic suggestion ----
+export interface TrendProviderInfo { id: string; label: string; }
+export interface TopicCandidate {
+  term: string;
+  headline: LocalizedText;
+  sub: LocalizedText;
+  comparePrompt: string;
+  why?: string;
+}
+
+/** List configured trend providers (key-gated). */
+export async function listTrendProviders(lang: Language): Promise<TrendProviderInfo[]> {
+  const d = await jsonOrThrow(await fetch(`/api/trends?lang=${lang}`));
+  return d.providers ?? [];
+}
+
+/** Fetch trend terms from a provider (optional seed keyword). */
+export async function fetchTrends(provider: string, lang: Language, query?: string): Promise<{ items: TrendItem[]; error?: string }> {
+  const sp = new URLSearchParams({ provider, lang });
+  if (query) sp.set("q", query);
+  const d = await jsonOrThrow(await fetch(`/api/trends?${sp.toString()}`));
+  return { items: d.items ?? [], error: d.error };
+}
+
+/** LLM-curate trend terms into comparison-topic candidates. */
+export async function curateTopics(args: { terms?: string[]; term?: string; language: Language; max?: number }): Promise<TopicCandidate[]> {
+  const d = await jsonOrThrow(
+    await fetch("/api/topic", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(args),
+    })
+  );
+  return d.candidates ?? [];
+}
+
 export type RenderEvent =
   | { type: "lang-start"; language: Language }
-  | { type: "progress"; phase: string; detail?: string; language?: Language }
+  | { type: "progress"; phase: string; pct?: number; language?: Language }
   | { type: "lang-done"; language: Language; path: string }
   | { type: "done"; renders: Partial<Record<Language, string>> }
   | { type: "error"; message: string };

@@ -23,17 +23,20 @@ export interface GenImageSourcesResult {
 
 export async function generateImageSources(opts: GenImageSourcesOpts): Promise<GenImageSourcesResult> {
   const aspect = opts.aspect ?? "9:16";
-  const results: GenResult[] = [];
-  const errors: { model: string; error: string }[] = [];
-  for (const uid of opts.models) {
-    try {
-      const r = await generateImageRaw({ uid, prompt: opts.prompt, language: opts.language, aspect });
-      results.push({ model: uid, status: "done", ms: r.ms, actualCost: r.cost, images: [{ aspect, dataUrl: r.dataUrl }] });
-    } catch (e) {
-      results.push({ model: uid, status: "error", error: (e as Error).message });
-      errors.push({ model: uid, error: (e as Error).message });
-    }
-  }
+  // Generate all models in parallel (order preserved), isolating per-model failures.
+  const results: GenResult[] = await Promise.all(
+    opts.models.map(async (uid): Promise<GenResult> => {
+      try {
+        const r = await generateImageRaw({ uid, prompt: opts.prompt, language: opts.language, aspect });
+        return { model: uid, status: "done", ms: r.ms, actualCost: r.cost, images: [{ aspect, dataUrl: r.dataUrl }] };
+      } catch (e) {
+        return { model: uid, status: "error", error: (e as Error).message };
+      }
+    })
+  );
+  const errors = results
+    .filter((r) => r.status === "error")
+    .map((r) => ({ model: r.model, error: r.error ?? "생성 실패" }));
   const saved = await saveSourceBatch({ type: "image", language: opts.language, prompt: opts.prompt, results });
   const refFor = (uid: string): AssetRef | null => {
     const f = saved.entry.files.find((x) => x.model === uid);
