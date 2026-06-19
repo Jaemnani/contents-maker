@@ -49,6 +49,9 @@ export const zAdPage = z.object({
   titleFont: z.string().optional(), // title font-family (default "Pretendard")
   titleSize: z.number().positive().optional(), // title font-size px (default 84)
   titleWeight: z.number().optional(), // title font-weight (default 900)
+  titleEffect: z.enum(["fade", "film", "blur", "rise", "pop"]).optional(), // title intro animation (default "fade")
+  titleBackdrop: z.enum(["none", "outline", "panel", "glass", "scrim"]).optional(), // title legibility treatment (default "outline")
+  titlePadding: z.number().nonnegative().optional(), // panel/glass inner padding px (default 34)
   compareLabelA: z.string().optional(), // compare-2up: title beside the A tag
   compareLabelB: z.string().optional(), // compare-2up: title beside the B tag
   vo: z.string(), // narration text fed to TTS

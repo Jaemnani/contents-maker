@@ -39,7 +39,7 @@ const Tag: React.FC<{ letter: string; title?: string; brand: string }> = ({ lett
       {letter}
     </span>
     {title ? (
-      <span style={{ color: "#fff", fontFamily: "Pretendard", fontWeight: 700, fontSize: 30, paddingRight: 6 }}>{title}</span>
+      <span style={{ color: "#fff", fontFamily: "Pretendard", fontWeight: 700, fontSize: 30, paddingRight: 6, maxWidth: 380, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>{title}</span>
     ) : null}
   </div>
 );

@@ -48,6 +48,11 @@ export async function POST(req: Request) {
       const slot = p.slot ?? "A";
       page[SLOT_SOURCE_FIELD[slot]] = { kind: "asset", ref };
       page[SLOT_PROMPT_FIELD[slot]] = p.prompt;
+      // compare-2up: stamp the generating model's name into that side's A/B label
+      if (page.visualTemplateId === "compare-2up" && ref.label) {
+        if (slot === "A") page.compareLabelA = ref.label;
+        else if (slot === "B") page.compareLabelB = ref.label;
+      }
     }
     const saved = await writeAdProject(fresh);
     return Response.json({ project: saved, ref });

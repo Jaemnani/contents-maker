@@ -7,7 +7,7 @@ import { saveAdProject, composeAd, ttsAdPage } from "@/lib/client/ad";
 import { useModels } from "@/hooks/useModels";
 import type { SelectOption } from "@/components/ui/Select";
 import PipelineBar from "@/components/ad/PipelineBar";
-import PageList from "@/components/ad/PageList";
+import PageList, { ENDCARD_PAGE_ID } from "@/components/ad/PageList";
 import PageInspector from "@/components/ad/PageInspector";
 import PlayerPreview from "@/components/ad/PlayerPreview";
 import BgmPanel from "@/components/ad/BgmPanel";
@@ -25,7 +25,6 @@ export default function AdEditor({ project: initial, onExit }: { project: AdProj
   const [errMsg, setErrMsg] = useState("");
   const [ttsProgress, setTtsProgress] = useState<{ done: number; total: number } | null>(null);
   const [ttsBusyId, setTtsBusyId] = useState<string | null>(null);
-  const [settingsOpen, setSettingsOpen] = useState(false); // project-common settings (collapsed by default)
 
   const imageModels: SelectOption[] = useMemo(
     () => (data ? data.models.filter((m) => m.modality === "image").map((m) => ({ value: m.uid, label: m.label })) : []),
@@ -245,46 +244,34 @@ export default function AdEditor({ project: initial, onExit }: { project: AdProj
 
       <PipelineBar project={project} busy={busy} onCompose={runCompose} onTtsAll={runTtsAll} ttsProgress={ttsProgress} />
 
-      {/* project-common settings — collapsible bar at the top, full width when open */}
-      <section className="mb-3 rounded-lg border border-border bg-surface">
-        <button onClick={() => setSettingsOpen((o) => !o)} className="flex w-full items-center gap-2 px-4 py-2.5 text-left">
-          <span className="text-sm font-bold text-ink">프로젝트 설정</span>
-          <span className="text-xs text-muted">브랜드 · BGM · 엔드카드 — 영상 전체에 공통 적용</span>
-          <span className="ml-auto text-xs text-muted">{settingsOpen ? "접기 ▲" : "펼치기 ▼"}</span>
-        </button>
-        {settingsOpen && (
-          <div className="grid grid-cols-1 gap-5 border-t border-border p-4 md:grid-cols-2 xl:grid-cols-3">
-            <ProductPanel product={project.product} onProduct={(p) => patchProject({ product: p })} />
-            <BgmPanel project={project} onAudio={(audio) => patchProject({ audio })} onProject={applyProject} onFlush={flushSave} />
-            <EndcardPanel project={project} onEndcard={(endcard) => patchProject({ endcard })} onProduct={(p) => patchProject({ product: p })} />
-          </div>
-        )}
-      </section>
-
-      {/* AI generation inputs: value-props (script) + suggested base image prompt */}
-      <section className="mb-3 rounded-md border border-empathy/30 bg-empathy/5 p-3">
-        <div className="mb-2 text-xs font-semibold text-empathy">✨ AI 대본 생성 입력</div>
-        <div className="grid gap-3 md:grid-cols-2">
-          <div>
-            <div className="mb-1 text-[11px] text-muted">강조점 / 가치 제안 <span>(줄바꿈으로 구분 · 대본에 반영, 화면엔 직접 안 나옴)</span></div>
-            <textarea
-              value={project.product.valueProps.join("\n")}
-              onChange={(e) => patchProject({ product: { ...project.product, valueProps: e.target.value.split("\n").filter((s) => s.trim()) } })}
-              placeholder={"예: 클릭 한 번으로 영상 완성\n무료로 시작\n워터마크 없음"}
-              className="h-16 w-full resize-y rounded border border-border bg-surface p-2 text-xs text-ink outline-none focus:border-primary"
-            />
-          </div>
-          {project.meta.seedPrompt != null && (
+      {/* AI 대본 생성 입력 · 브랜드 · BGM — one line */}
+      <section className="mb-3 grid items-start gap-4 lg:grid-cols-3">
+        <div className="rounded-lg border border-empathy/30 bg-empathy/5 p-4">
+          <div className="mb-2 text-sm font-bold text-empathy">✨ AI 대본 생성 입력</div>
+          <div className="flex flex-col gap-3">
             <div>
-              <div className="mb-1 text-[11px] text-muted">추천 본론 프롬프트 <span>(이미지 생성용 · 페이지 ‘AI 생성’에서 불러와 사용)</span></div>
+              <div className="mb-1 text-[11px] text-muted">강조점 / 가치 제안 <span>(줄바꿈으로 구분 · 대본에 반영, 화면엔 직접 안 나옴)</span></div>
               <textarea
-                value={project.meta.seedPrompt}
-                onChange={(e) => patchProject({ meta: { ...project.meta, seedPrompt: e.target.value } })}
+                value={project.product.valueProps.join("\n")}
+                onChange={(e) => patchProject({ product: { ...project.product, valueProps: e.target.value.split("\n").filter((s) => s.trim()) } })}
+                placeholder={"예: 클릭 한 번으로 영상 완성\n무료로 시작\n워터마크 없음"}
                 className="h-16 w-full resize-y rounded border border-border bg-surface p-2 text-xs text-ink outline-none focus:border-primary"
               />
             </div>
-          )}
+            {project.meta.seedPrompt != null && (
+              <div>
+                <div className="mb-1 text-[11px] text-muted">추천 본론 프롬프트 <span>(이미지 생성용 · 페이지 ‘AI 생성’에서 불러와 사용)</span></div>
+                <textarea
+                  value={project.meta.seedPrompt}
+                  onChange={(e) => patchProject({ meta: { ...project.meta, seedPrompt: e.target.value } })}
+                  className="h-16 w-full resize-y rounded border border-border bg-surface p-2 text-xs text-ink outline-none focus:border-primary"
+                />
+              </div>
+            )}
+          </div>
         </div>
+        <ProductPanel product={project.product} onProduct={(p) => patchProject({ product: p })} />
+        <BgmPanel project={project} onAudio={(audio) => patchProject({ audio })} onProject={applyProject} onFlush={flushSave} />
       </section>
 
       {errMsg && <p className="mb-3 rounded-md bg-danger/10 px-3 py-2 text-xs text-danger">{errMsg}</p>}
@@ -302,25 +289,29 @@ export default function AdEditor({ project: initial, onExit }: { project: AdProj
           <PageList project={project} selectedId={selectedId} onSelect={setSelectedId} onPages={setPages} />
         </aside>
 
-        <section className="rounded-lg border border-border bg-surface p-4">
-          <h2 className="mb-3 text-sm font-bold">페이지 편집</h2>
-          {selected ? (
-            <PageInspector
-              key={selected.id} // reset per-page local state (chooser tab, prompt draft)
-              project={project}
-              page={selected}
-              imageModels={imageModels}
-              onPatch={(patch) => patchPage(selected.id, patch)}
-              onProject={applyProject}
-              onProductName={(name) => patchProject({ product: { ...projRef.current.product, name } })}
-              onTts={runTts}
-              ttsBusy={ttsBusyId === selected.id || busy}
-              onFlush={flushSave}
-            />
-          ) : (
-            <p className="text-sm text-muted">왼쪽에서 페이지를 선택하세요.</p>
-          )}
-        </section>
+        {selectedId === ENDCARD_PAGE_ID ? (
+          <EndcardPanel project={project} onEndcard={(endcard) => patchProject({ endcard })} onProduct={(p) => patchProject({ product: p })} />
+        ) : (
+          <section className="rounded-lg border border-border bg-surface p-4">
+            <h2 className="mb-3 text-sm font-bold">페이지 편집</h2>
+            {selected ? (
+              <PageInspector
+                key={selected.id} // reset per-page local state (chooser tab, prompt draft)
+                project={project}
+                page={selected}
+                imageModels={imageModels}
+                onPatch={(patch) => patchPage(selected.id, patch)}
+                onProject={applyProject}
+                onProductName={(name) => patchProject({ product: { ...projRef.current.product, name } })}
+                onTts={runTts}
+                ttsBusy={ttsBusyId === selected.id || busy}
+                onFlush={flushSave}
+              />
+            ) : (
+              <p className="text-sm text-muted">왼쪽에서 페이지를 선택하세요.</p>
+            )}
+          </section>
+        )}
 
         <aside className="flex flex-col gap-4">
           <div>

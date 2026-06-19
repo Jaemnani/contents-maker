@@ -51,6 +51,16 @@ export default function SourceChooser({
 }) {
   const source: PageSource = slotSource(page, slot);
   const patchSource = (s: PageSource) => onPatch({ [SLOT_SOURCE_FIELD[slot]]: s } as Partial<AdPage>);
+  // compare-2up A/B slots: stamp the picked asset's model name into that side's label
+  const compareField =
+    page.visualTemplateId === "compare-2up" && (slot === "A" || slot === "B")
+      ? slot === "A" ? "compareLabelA" : "compareLabelB"
+      : null;
+  function setAsset(ref: AssetRef) {
+    const patch: Partial<AdPage> = { [SLOT_SOURCE_FIELD[slot]]: { kind: "asset", ref } };
+    if (compareField && ref.label) (patch as Record<string, unknown>)[compareField] = ref.label;
+    onPatch(patch);
+  }
 
   const [tab, setTab] = useState<"ai" | "upload" | "pool">(page.sourceType === "video" ? "pool" : "ai");
   const [modelPick, setModelPick] = useState("");
@@ -158,7 +168,7 @@ export default function SourceChooser({
         title={`${page.sourceType === "image" ? "이미지" : "클립"} 선택`}
         onClose={() => setPickOpen(false)}
         onPick={(ref: AssetRef) => {
-          patchSource({ kind: "asset", ref });
+          setAsset(ref);
           setPickOpen(false);
         }}
       />

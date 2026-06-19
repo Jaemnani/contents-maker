@@ -9,6 +9,9 @@ import { VISUAL_METAS, visualSourceSlots } from "@/remotion/ad/templates/meta";
 import AddPageModal from "@/components/ad/AddPageModal";
 import TemplateThumb from "@/components/ad/TemplateThumb";
 
+// sentinel selection id for the endcard (the video's final element, shown last in the list)
+export const ENDCARD_PAGE_ID = "__endcard__";
+
 export default function PageList({
   project,
   selectedId,
@@ -87,6 +90,34 @@ export default function PageList({
       <button onClick={() => setAddOpen(true)} className="rounded-lg border border-dashed border-border py-2.5 text-sm text-muted transition-all duration-200 hover:border-empathy hover:text-ink">
         + 페이지 추가
       </button>
+
+      {/* endcard — always the video's final element, so it lives at the end of the list */}
+      {(() => {
+        const ec = project.endcard;
+        const on = selectedId === ENDCARD_PAGE_ID;
+        return (
+          <button
+            onClick={() => onSelect(ENDCARD_PAGE_ID)}
+            className={`mt-1 flex w-full gap-2 rounded-lg border border-dashed p-2.5 text-left transition-all duration-200 ${on ? "border-empathy bg-empathy/5 ring-1 ring-empathy" : "border-border bg-surface hover:border-empathy"}`}
+          >
+            {ec.enabled ? (
+              <TemplateThumb category="endcard" id={ec.templateId} brand={brand} className="w-9" />
+            ) : (
+              <div className="grid aspect-[9/16] w-9 shrink-0 place-items-center rounded-md bg-ink/10 text-[10px] text-muted">끝</div>
+            )}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="grid h-5 shrink-0 place-items-center rounded-full bg-ink/40 px-1.5 text-[10px] font-bold text-white">끝</span>
+                <span className="truncate text-sm font-medium text-ink">엔드카드</span>
+              </div>
+              <div className="mt-1 text-[11px] text-muted">
+                {ec.enabled ? `${(ec.durationSec ?? 3).toFixed(1)}s · 마무리 화면` : "미사용 — 눌러서 켜기"}
+              </div>
+            </div>
+          </button>
+        );
+      })()}
+
       <AddPageModal open={addOpen} brand={brand} onPick={addWithVisual} onClose={() => setAddOpen(false)} />
     </div>
   );
