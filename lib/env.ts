@@ -53,3 +53,20 @@ export const getElevenLabsVoiceId = () => process.env.ELEVENLABS_VOICE_ID || "EX
 export const getAdComposeModel = () => process.env.AD_COMPOSE_MODEL || "openai/gpt-4.1";
 // BGM music-gen model (fal.ai text-to-music, async queue). Override per .env.local.
 export const getAdMusicModel = () => process.env.AD_MUSIC_MODEL || "fal-ai/stable-audio";
+
+// Google Gemini — TTS (narration) + Lyria (BGM), single key (Google AI Studio).
+export function getGeminiKey(): string {
+  const key = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  if (!key) throw new Error("GEMINI_API_KEY is not set. Add it to .env.local (https://aistudio.google.com/apikey).");
+  return key;
+}
+export const hasGeminiKey = () => !!(process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY);
+export const hasElevenLabsKey = () => !!process.env.ELEVENLABS_API_KEY;
+export const hasFalKey = () => !!(process.env.FAL_API_KEY || process.env.FAL_KEY);
+// model ids are preview/fast-moving — override per .env.local if Google renames them.
+export const getGeminiTtsModel = () => process.env.GEMINI_TTS_MODEL || "gemini-2.5-flash-preview-tts";
+export const getGeminiTtsVoice = () => process.env.GEMINI_TTS_VOICE || "Kore";
+export const getGeminiMusicModel = () => process.env.GEMINI_MUSIC_MODEL || "lyria-3-clip-preview";
+// provider override; "" = auto (pick whichever key is configured).
+export const getAdTtsProvider = () => (process.env.AD_TTS_PROVIDER || "").toLowerCase();
+export const getAdMusicProvider = () => (process.env.AD_MUSIC_PROVIDER || "").toLowerCase();

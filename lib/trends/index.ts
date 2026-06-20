@@ -1,11 +1,11 @@
-// Trend provider registry.
+// Trend provider registry. Free sources only (YouTube quota / NewsAPI free tier).
+// SerpApi (paid Google Trends) is intentionally excluded — see lib/trends/serpapi.ts.
 import "server-only";
 import { youtubeProvider } from "./youtube";
 import { newsProvider } from "./news";
-import { serpapiProvider } from "./serpapi";
 import type { TrendProvider, TrendFetchOpts, TrendItem } from "./types";
 
-const PROVIDERS: TrendProvider[] = [youtubeProvider, newsProvider, serpapiProvider];
+const PROVIDERS: TrendProvider[] = [youtubeProvider, newsProvider];
 
 /** Providers that have an API key configured (shown in the UI). */
 export function listProviders(): { id: string; label: string }[] {

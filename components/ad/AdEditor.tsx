@@ -38,14 +38,25 @@ export default function AdEditor({ project: initial, onExit }: { project: AdProj
   // Undo/redo: snapshot stacks of whole-project states (immutable, so refs are safe).
   const undoRef = useRef<AdProject[]>([]);
   const redoRef = useRef<AdProject[]>([]);
+  const lastPushAt = useRef(0); // for coalescing bursts of typing into one undo step
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
+  const HISTORY_COALESCE_MS = 450;
   const syncHistoryFlags = () => {
     setCanUndo(undoRef.current.length > 0);
     setCanRedo(redoRef.current.length > 0);
   };
-  /** Record the CURRENT state before a user edit replaces it. */
+  /**
+   * Record the CURRENT state before a user edit replaces it. Rapid successive edits
+   * (typing) coalesce: only the pre-burst snapshot is kept, so one undo reverts the burst.
+   */
   function pushHistory() {
+    const now = Date.now();
+    if (undoRef.current.length && now - lastPushAt.current < HISTORY_COALESCE_MS) {
+      lastPushAt.current = now; // within a burst — pre-burst snapshot already captured
+      return;
+    }
+    lastPushAt.current = now;
     undoRef.current.push(projRef.current);
     if (undoRef.current.length > 60) undoRef.current.shift();
     redoRef.current = [];
@@ -99,6 +110,11 @@ export default function AdEditor({ project: initial, onExit }: { project: AdProj
   /** Adopt a server-persisted project (no extra save). Server ops are undoable too. */
   function applyProject(p: AdProject) {
     pushHistory();
+    setBoth(p);
+  }
+  /** Adopt a project WITHOUT recording history — for render file ops (add/delete), which
+   *  aren't editor edits and whose files are gone, so undoing them would dangle. */
+  function adoptProject(p: AdProject) {
     setBoth(p);
   }
   function patchProject(patch: Partial<AdProject>) {
@@ -318,7 +334,7 @@ export default function AdEditor({ project: initial, onExit }: { project: AdProj
             <h2 className="mb-2 text-sm font-bold">미리보기</h2>
             <PlayerPreview project={project} />
           </div>
-          <AdRenderPanel project={project} busy={busy} onBusy={setBusy} onProject={applyProject} onFlush={flushSave} />
+          <AdRenderPanel project={project} busy={busy} onBusy={setBusy} onProject={adoptProject} onFlush={flushSave} />
         </aside>
       </div>
 

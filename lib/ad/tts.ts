@@ -1,4 +1,5 @@
-// ElevenLabs VO TTS for ad pages. Hash-keyed mp3s (skip if unchanged, stale cleanup),
+// VO (narration) TTS for ad pages. Provider auto-selected (ElevenLabs / Gemini) from
+// whichever key is configured. Hash-keyed audio (skip if unchanged, stale cleanup),
 // duration measured server-side with @remotion/media-parser (same vendor as the renderer).
 import "server-only";
 import { createHash } from "crypto";
@@ -6,7 +7,15 @@ import { promises as fs } from "fs";
 import path from "path";
 import { parseMedia } from "@remotion/media-parser";
 import { nodeReader } from "@remotion/media-parser/node";
-import { getElevenLabsKey, getElevenLabsVoiceId } from "@/lib/env";
+import {
+  getElevenLabsKey,
+  getElevenLabsVoiceId,
+  getGeminiTtsVoice,
+  getAdTtsProvider,
+  hasElevenLabsKey,
+  hasGeminiKey,
+} from "@/lib/env";
+import { geminiTts } from "@/lib/gemini/audio";
 import { readAdProject, writeAdProject, projectDirAbs } from "@/lib/ad/store";
 import type { AdProject } from "@/lib/ad/schema";
 
@@ -15,8 +24,17 @@ import type { AdProject } from "@/lib/ad/schema";
 const MODEL_ID = "eleven_flash_v2_5";
 const OUTPUT_FORMAT = "mp3_44100_128";
 
-const voHash = (voiceId: string, text: string) =>
-  createHash("sha256").update(`${voiceId}\n${text}`).digest("hex").slice(0, 8);
+const voHash = (key: string, text: string) =>
+  createHash("sha256").update(`${key}\n${text}`).digest("hex").slice(0, 8);
+
+/** Pick the TTS provider: explicit env override, else whichever key exists (ElevenLabs first). */
+function resolveTtsProvider(): { provider: "elevenlabs" | "gemini"; voice: string; ext: "mp3" | "wav" } {
+  const explicit = getAdTtsProvider();
+  const useGemini = explicit === "gemini" || (explicit !== "elevenlabs" && !hasElevenLabsKey() && hasGeminiKey());
+  return useGemini
+    ? { provider: "gemini", voice: getGeminiTtsVoice(), ext: "wav" }
+    : { provider: "elevenlabs", voice: getElevenLabsVoiceId(), ext: "mp3" };
+}
 
 async function elevenLabsTts(text: string, voiceId: string): Promise<Buffer> {
   const res = await fetch(
@@ -55,10 +73,10 @@ export async function ttsPage(projectId: string, pageId: string): Promise<AdProj
   const text = page.vo.trim();
   if (!text) throw new Error("VO 텍스트가 비어 있습니다.");
 
-  const voiceId = getElevenLabsVoiceId();
-  const hash = voHash(voiceId, text);
+  const { provider, voice, ext } = resolveTtsProvider();
+  const hash = voHash(`${provider}:${voice}`, text);
   const audioDirAbs = path.join(projectDirAbs(projectId), "audio");
-  const fileName = `page-${page.id}-${hash}.mp3`;
+  const fileName = `page-${page.id}-${hash}.${ext}`;
   const absPath = path.join(audioDirAbs, fileName);
   const relPath = path.posix.join("outputs", "results", projectId, "audio", fileName);
 
@@ -71,7 +89,7 @@ export async function ttsPage(projectId: string, pageId: string): Promise<AdProj
     }
   }
 
-  const buf = await elevenLabsTts(text, voiceId);
+  const buf = provider === "gemini" ? await geminiTts(text, voice) : await elevenLabsTts(text, voice);
   await fs.mkdir(audioDirAbs, { recursive: true });
   await fs.writeFile(absPath, buf);
   const durationSec = await mp3DurationSec(absPath);

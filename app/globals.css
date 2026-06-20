@@ -76,3 +76,13 @@ h1, h2, h3 {
 .lift:active {
   transform: translateY(0) scale(0.98);
 }
+
+/* TemplateThumb schematic animations (motion/transition previews) — injected once here
+   instead of per-component <style> to avoid duplicate keyframe blocks in the DOM. */
+@keyframes tt-zoom{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+@keyframes tt-pan{0%,100%{transform:translateX(-14%)}50%{transform:translateX(14%)}}
+@keyframes tt-pop{0%,100%{transform:scale(.5)}45%,70%{transform:scale(1)}}
+@keyframes tt-shrink{0%,100%{transform:scale(1.3)}55%{transform:scale(.6)}}
+@keyframes tt-slide{0%{transform:translateX(70%)}100%{transform:translateX(0)}}
+@keyframes tt-rotate{0%{transform:rotate(-14deg) scale(.95)}100%{transform:rotate(0) scale(1.1)}}
+@keyframes tt-fade{0%{opacity:.1}100%{opacity:1}}

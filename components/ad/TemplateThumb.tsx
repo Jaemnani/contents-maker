@@ -4,19 +4,8 @@
 // Used in the page-add picker, the template pickers, and the inspector.
 import React from "react";
 
-// Injected once: tiny keyframes for motion/transition schematics.
-const KEYFRAMES = `
-@keyframes tt-zoom{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
-@keyframes tt-pan{0%,100%{transform:translateX(-14%)}50%{transform:translateX(14%)}}
-@keyframes tt-pop{0%,100%{transform:scale(.5)}45%,70%{transform:scale(1)}}
-@keyframes tt-shrink{0%,100%{transform:scale(1.3)}55%{transform:scale(.6)}}
-@keyframes tt-slide{0%{transform:translateX(70%)}100%{transform:translateX(0)}}
-@keyframes tt-rotate{0%{transform:rotate(-14deg) scale(.95)}100%{transform:rotate(0) scale(1.1)}}
-@keyframes tt-fade{0%{opacity:.1}100%{opacity:1}}
-`;
-
-const Keyframes = () => <style dangerouslySetInnerHTML={{ __html: KEYFRAMES }} />;
-
+// Keyframes (tt-zoom/pan/pop/shrink/slide/rotate/fade) live in app/globals.css — injected
+// once globally instead of a <style> block per thumb instance.
 const GRAD = "linear-gradient(150deg,#3b4a5a 0%,#1b2735 100%)";
 
 /** Media stand-in: gradient + sun/hill so it reads as a photo. */
@@ -118,7 +107,6 @@ export default function TemplateThumb({
 }) {
   return (
     <div className={`relative aspect-[9/16] shrink-0 overflow-hidden rounded-md bg-ink ${className}`}>
-      <Keyframes />
       {category === "visual" && <VisualThumb id={id} brand={brand} />}
       {category === "motion" && <MotionThumb id={id} />}
       {category === "transition" && <TransitionThumb id={id} brand={brand} />}
