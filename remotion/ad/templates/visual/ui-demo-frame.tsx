@@ -38,7 +38,7 @@ export const Component: React.FC<VisualProps> = ({ page, product, assetBase }) =
           </div>
         </div>
       </div>
-      <CaptionBanner text={page.caption} product={product} bottom={140} />
+      <CaptionBanner text={page.caption} product={product} page={page} bottom={140} />
       <AbsoluteFill style={{ pointerEvents: "none", boxShadow: `inset 0 0 0 0 ${COLORS.ink}` }} />
     </AbsoluteFill>
   );

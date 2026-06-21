@@ -8,6 +8,6 @@ import { CaptionBanner } from "@/remotion/ad/components/CaptionBanner";
 export const Component: React.FC<VisualProps> = ({ page, product, assetBase }) => (
   <AbsoluteFill>
     <SourceLayer source={page.source} assetBase={assetBase} />
-    <CaptionBanner text={page.caption} product={product} />
+    <CaptionBanner text={page.caption} product={product} page={page} />
   </AbsoluteFill>
 );

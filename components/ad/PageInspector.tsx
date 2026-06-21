@@ -20,25 +20,35 @@ function templateMetas(cat: "visual" | "motion", sourceType: "image" | "video"):
 }
 const transitionMetas: TemplateMeta[] = Object.values(registry.transition).map((t) => t.meta);
 
-// bundled title fonts (remotion/lib/fonts.ts). Bebas Neue is latin-only (영문 임팩트).
+// fonts (remotion/ad/lib/fonts.ts — Pretendard local + @remotion/google-fonts)
 const TITLE_FONTS: SelectOption[] = [
-  { value: "Pretendard", label: "프리텐다드 (한글·영문)" },
-  { value: "Bebas Neue", label: "베바스 (영문 전용·임팩트)" },
+  { value: "Pretendard", label: "프리텐다드 (한글 기본)" },
+  { value: "Black Han Sans", label: "검은고딕 (임팩트 한글)" },
+  { value: "Do Hyeon", label: "도현 (굵은 고딕)" },
+  { value: "Jua", label: "주아 (둥근 한글)" },
+  { value: "Gothic A1", label: "고딕 A1" },
+  { value: "Nanum Myeongjo", label: "나눔명조 (세리프)" },
+  { value: "Nanum Pen Script", label: "나눔손글씨 (펜)" },
+  { value: "Bebas Neue", label: "베바스 (영문 임팩트)" },
+  { value: "Montserrat", label: "몽세라 (영문 모던)" },
 ];
-// title intro animations (fullscreen-title.tsx)
 const TITLE_EFFECTS: SelectOption[] = [
   { value: "fade", label: "기본 페이드 (깔끔)" },
   { value: "film", label: "반투명 필름 + 써지듯" },
   { value: "blur", label: "블러 인 (초점 맞듯)" },
   { value: "rise", label: "아래에서 솟아오름" },
+  { value: "slide", label: "옆에서 슬라이드" },
   { value: "pop", label: "팝 (탄성)" },
+  { value: "stamp", label: "스탬프 (찍히듯)" },
+  { value: "neon", label: "네온 글로우" },
 ];
-// title legibility treatment (fullscreen-title.tsx)
 const TITLE_BACKDROPS: SelectOption[] = [
-  { value: "outline", label: "외곽선 (테두리) — 기본" },
+  { value: "banner", label: "브랜드 배너 (알약)" },
+  { value: "outline", label: "외곽선 (테두리)" },
   { value: "none", label: "없음 (글자만)" },
   { value: "panel", label: "반투명 패널" },
   { value: "glass", label: "글래스 (프로스트)" },
+  { value: "highlight", label: "형광펜 밑줄" },
   { value: "scrim", label: "검은 그라데이션" },
 ];
 
@@ -85,6 +95,13 @@ export default function PageInspector({
   const slots = visualSourceSlots(page.visualTemplateId);
   const hasTitle = !!registry.visual[page.visualTemplateId]?.meta.hasTitle;
   const isCompare = page.visualTemplateId === "compare-2up";
+  // per-layout text-style defaults (big title vs caption banner)
+  const defBackdrop = hasTitle ? "outline" : "banner";
+  const effBackdrop = page.titleBackdrop ?? defBackdrop;
+  const defSize = hasTitle ? 84 : 56;
+  const defWeight = hasTitle ? 900 : 800;
+  const defPad = hasTitle ? 34 : 28;
+  const padBackdrop = effBackdrop === "panel" || effBackdrop === "glass" || effBackdrop === "banner";
 
   const voOverrun = page.durationOverrideSec != null && page.voAudio != null && page.durationOverrideSec < page.voAudio.durationSec;
 
@@ -165,8 +182,10 @@ export default function PageInspector({
               </span>
             </div>
             <textarea value={page.caption} onChange={(e) => onPatch({ caption: e.target.value })} className="h-14 w-full resize-y rounded-md border border-border bg-surface p-2 text-base outline-none focus:border-primary" />
-            {hasTitle && (
-              <div className="mt-1.5 flex flex-col gap-1.5 rounded-md border border-border bg-surface-muted/30 p-2">
+            {/* text style — applies to this page's on-screen text in every layout */}
+            <div className="mt-1.5 flex flex-col gap-1.5 rounded-md border border-border bg-surface-muted/30 p-2">
+              <div className="text-[11px] font-semibold text-muted">글자 스타일</div>
+              {hasTitle && (
                 <div className="flex items-center gap-2">
                   <span className="w-12 shrink-0 text-[11px] text-muted">위치</span>
                   <div className="flex gap-1">
@@ -180,67 +199,54 @@ export default function PageInspector({
                     })}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-12 shrink-0 text-[11px] text-muted">글꼴</span>
-                  <Select
-                    value={page.titleFont || "Pretendard"}
-                    options={TITLE_FONTS}
-                    onChange={(v) => onPatch({ titleFont: v })}
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-12 shrink-0 text-[11px] text-muted">크기</span>
-                  <input
-                    type="range" min={40} max={140} step={2}
-                    value={page.titleSize ?? 84}
-                    onChange={(e) => onPatch({ titleSize: parseInt(e.target.value, 10) })}
-                    className="flex-1"
-                  />
-                  <span className="w-9 shrink-0 text-right text-[11px] text-muted">{page.titleSize ?? 84}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-12 shrink-0 text-[11px] text-muted">굵기</span>
-                  <div className="flex gap-1">
-                    {([[400, "보통"], [600, "약간"], [900, "굵게"]] as const).map(([w, label]) => {
-                      const on = (page.titleWeight ?? 900) === w;
-                      return (
-                        <button key={w} onClick={() => onPatch({ titleWeight: w })} className={`rounded-md border px-2.5 py-1 text-[11px] transition-all duration-200 ${on ? "border-empathy bg-empathy/10 text-ink" : "border-border text-muted hover:border-empathy"}`}>
-                          {label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-12 shrink-0 text-[11px] text-muted">효과</span>
-                  <Select
-                    value={page.titleEffect || "fade"}
-                    options={TITLE_EFFECTS}
-                    onChange={(v) => onPatch({ titleEffect: v as "fade" | "film" | "blur" | "rise" | "pop" })}
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-12 shrink-0 text-[11px] text-muted">배경</span>
-                  <Select
-                    value={page.titleBackdrop || "outline"}
-                    options={TITLE_BACKDROPS}
-                    onChange={(v) => onPatch({ titleBackdrop: v as "none" | "outline" | "panel" | "glass" | "scrim" })}
-                  />
-                </div>
-                {(page.titleBackdrop === "panel" || page.titleBackdrop === "glass") && (
-                  <div className="flex items-center gap-2">
-                    <span className="w-12 shrink-0 text-[11px] text-muted">여백</span>
-                    <input
-                      type="range" min={8} max={80} step={2}
-                      value={page.titlePadding ?? 34}
-                      onChange={(e) => onPatch({ titlePadding: parseInt(e.target.value, 10) })}
-                      className="flex-1"
-                    />
-                    <span className="w-9 shrink-0 text-right text-[11px] text-muted">{page.titlePadding ?? 34}</span>
-                  </div>
-                )}
+              )}
+              <div className="flex items-center gap-2">
+                <span className="w-12 shrink-0 text-[11px] text-muted">글꼴</span>
+                <Select value={page.titleFont || "Pretendard"} options={TITLE_FONTS} onChange={(v) => onPatch({ titleFont: v })} />
               </div>
-            )}
+              <div className="flex items-center gap-2">
+                <span className="w-12 shrink-0 text-[11px] text-muted">크기</span>
+                <input type="range" min={24} max={160} step={2} value={page.titleSize ?? defSize} onChange={(e) => onPatch({ titleSize: parseInt(e.target.value, 10) })} className="flex-1" />
+                <span className="w-9 shrink-0 text-right text-[11px] text-muted">{page.titleSize ?? defSize}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-12 shrink-0 text-[11px] text-muted">굵기</span>
+                <div className="flex gap-1">
+                  {([[400, "보통"], [600, "약간"], [900, "굵게"]] as const).map(([w, label]) => {
+                    const on = (page.titleWeight ?? defWeight) === w;
+                    return (
+                      <button key={w} onClick={() => onPatch({ titleWeight: w })} className={`rounded-md border px-2.5 py-1 text-[11px] transition-all duration-200 ${on ? "border-empathy bg-empathy/10 text-ink" : "border-border text-muted hover:border-empathy"}`}>
+                        {label}
+                      </button>
+                    );
+                  })}
+                  <button onClick={() => onPatch({ titleItalic: !page.titleItalic })} className={`ml-1 rounded-md border px-2.5 py-1 text-[11px] italic transition-all duration-200 ${page.titleItalic ? "border-empathy bg-empathy/10 text-ink" : "border-border text-muted hover:border-empathy"}`}>
+                    기울임
+                  </button>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-12 shrink-0 text-[11px] text-muted">자간</span>
+                <input type="range" min={-8} max={24} step={1} value={page.titleLetterSpacing ?? 0} onChange={(e) => onPatch({ titleLetterSpacing: parseInt(e.target.value, 10) })} className="flex-1" />
+                <span className="w-9 shrink-0 text-right text-[11px] text-muted">{page.titleLetterSpacing ?? 0}</span>
+                <input type="color" value={page.titleColor || "#ffffff"} onChange={(e) => onPatch({ titleColor: e.target.value })} title="글자 색" className="h-7 w-8 shrink-0 cursor-pointer rounded border border-border bg-surface" />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-12 shrink-0 text-[11px] text-muted">효과</span>
+                <Select value={page.titleEffect || "fade"} options={TITLE_EFFECTS} onChange={(v) => onPatch({ titleEffect: v as NonNullable<AdPage["titleEffect"]> })} />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-12 shrink-0 text-[11px] text-muted">배경</span>
+                <Select value={effBackdrop} options={TITLE_BACKDROPS} onChange={(v) => onPatch({ titleBackdrop: v as NonNullable<AdPage["titleBackdrop"]> })} />
+              </div>
+              {padBackdrop && (
+                <div className="flex items-center gap-2">
+                  <span className="w-12 shrink-0 text-[11px] text-muted">여백</span>
+                  <input type="range" min={8} max={80} step={2} value={page.titlePadding ?? defPad} onChange={(e) => onPatch({ titlePadding: parseInt(e.target.value, 10) })} className="flex-1" />
+                  <span className="w-9 shrink-0 text-right text-[11px] text-muted">{page.titlePadding ?? defPad}</span>
+                </div>
+              )}
+            </div>
           </div>
           <div>
             <div className="mb-1 flex items-center justify-between text-xs text-muted">

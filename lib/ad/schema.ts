@@ -46,11 +46,15 @@ export const zAdPage = z.object({
   transitionTemplateId: z.string(), // transition from THIS page to the next (or endcard)
   caption: z.string(), // on-screen subtitle (ko, v1 single-language)
   titlePosition: z.enum(["top", "middle", "bottom"]).optional(), // title-capable visuals (default "top")
-  titleFont: z.string().optional(), // title font-family (default "Pretendard")
-  titleSize: z.number().positive().optional(), // title font-size px (default 84)
-  titleWeight: z.number().optional(), // title font-weight (default 900)
-  titleEffect: z.enum(["fade", "film", "blur", "rise", "pop"]).optional(), // title intro animation (default "fade")
-  titleBackdrop: z.enum(["none", "outline", "panel", "glass", "scrim"]).optional(), // title legibility treatment (default "outline")
+  // ── on-screen text style — applies to this page's caption/title in EVERY layout ──
+  titleFont: z.string().optional(), // font key (default "Pretendard"); see remotion/ad/lib/fonts.ts
+  titleSize: z.number().positive().optional(), // font-size px (per-layout default if unset)
+  titleWeight: z.number().optional(), // font-weight (default 900 title / 800 caption)
+  titleItalic: z.boolean().optional(), // italic
+  titleLetterSpacing: z.number().optional(), // letter-spacing px (can be negative)
+  titleColor: z.string().optional(), // text color hex (default white)
+  titleEffect: z.enum(["fade", "film", "blur", "rise", "pop", "slide", "neon", "stamp"]).optional(), // intro animation
+  titleBackdrop: z.enum(["banner", "none", "outline", "panel", "glass", "highlight", "scrim"]).optional(), // legibility treatment
   titlePadding: z.number().nonnegative().optional(), // panel/glass inner padding px (default 34)
   compareLabelA: z.string().optional(), // compare-2up: title beside the A tag
   compareLabelB: z.string().optional(), // compare-2up: title beside the B tag

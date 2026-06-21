@@ -31,7 +31,7 @@ export const Component: React.FC<VisualProps> = ({ page, product, assetBase }) =
           ))}
         </div>
       </div>
-      <CaptionBanner text={page.caption} product={product} bottom={170} />
+      <CaptionBanner text={page.caption} product={product} page={page} bottom={170} />
     </AbsoluteFill>
   );
 };

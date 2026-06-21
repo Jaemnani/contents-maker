@@ -11,6 +11,6 @@ export const Component: React.FC<VisualProps> = ({ page, product, assetBase }) =
     <div style={{ position: "absolute", top: 90, left: 60, background: "rgba(11,18,21,0.7)", color: "#fff", fontFamily: "Pretendard", fontWeight: 600, fontSize: 30, padding: "10px 24px", borderRadius: 999, border: `3px solid ${product.brandColor || BRAND_FALLBACK}` }}>
       {product.name}
     </div>
-    <CaptionBanner text={page.caption} product={product} bottom={170} />
+    <CaptionBanner text={page.caption} product={product} page={page} bottom={170} />
   </AbsoluteFill>
 );
