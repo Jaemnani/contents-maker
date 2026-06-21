@@ -31,8 +31,30 @@ export async function GET(req: Request) {
   try {
     const buf = await fs.readFile(abs);
     const type = MIME[path.extname(abs).toLowerCase()] || "application/octet-stream";
+    const total = buf.length;
+    // Range support — HTML <video> (looping bg clips) needs it to seek without a full download.
+    const range = req.headers.get("range");
+    const m = range && /^bytes=(\d*)-(\d*)$/.exec(range);
+    if (m) {
+      const start = m[1] ? parseInt(m[1], 10) : 0;
+      const end = m[2] ? Math.min(parseInt(m[2], 10), total - 1) : total - 1;
+      if (start > end || start >= total) {
+        return new Response("range not satisfiable", { status: 416, headers: { "Content-Range": `bytes */${total}` } });
+      }
+      const slice = buf.subarray(start, end + 1);
+      return new Response(new Uint8Array(slice), {
+        status: 206,
+        headers: {
+          "Content-Type": type,
+          "Content-Range": `bytes ${start}-${end}/${total}`,
+          "Accept-Ranges": "bytes",
+          "Content-Length": String(slice.length),
+          "Cache-Control": "private, max-age=60",
+        },
+      });
+    }
     return new Response(new Uint8Array(buf), {
-      headers: { "Content-Type": type, "Cache-Control": "private, max-age=60" },
+      headers: { "Content-Type": type, "Accept-Ranges": "bytes", "Content-Length": String(total), "Cache-Control": "private, max-age=60" },
     });
   } catch {
     return new Response("not found", { status: 404 });

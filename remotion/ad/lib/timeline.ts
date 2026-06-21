@@ -61,6 +61,30 @@ export function adTotalFrames(project: AdProject): number {
   return Math.max(1, total);
 }
 
+/** Stable identity for a VIDEO source (null for images / none / non-video). */
+function videoKey(page: AdPage): string | null {
+  const s = page.source;
+  if (s.kind === "asset" && s.ref.modality === "video") return `a:${s.ref.datasetPath}/${s.ref.file}`;
+  if (s.kind === "upload" && /\.(mp4|webm|mov)$/i.test(s.path)) return `u:${s.path}`;
+  return null;
+}
+
+/**
+ * Per-page video start offset (composition frames) so consecutive pages sharing the SAME
+ * video source resume from where the previous page left off — frame-accurate continuity,
+ * correct even across crossfades (uses pageOffsets, which already fold in transition overlap).
+ */
+export function videoStartFrames(project: AdProject): number[] {
+  const offsets = pageOffsets(project);
+  return project.pages.map((p, i) => {
+    const key = videoKey(p);
+    if (!key) return 0;
+    let r = i; // walk back to the first page of this same-source run
+    while (r - 1 >= 0 && videoKey(project.pages[r - 1]) === key) r--;
+    return Math.max(0, offsets[i] - offsets[r]);
+  });
+}
+
 export interface FrameInterval {
   from: number;
   to: number;

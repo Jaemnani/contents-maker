@@ -15,7 +15,9 @@ import {
   endcardFrames,
   voIntervals,
   bgmVolumeAt,
+  videoStartFrames,
 } from "@/remotion/ad/lib/timeline";
+import { MediaStartContext } from "@/remotion/ad/components/SourceLayer";
 
 function bgmSrc(project: AdProject, assetBase: string): string | null {
   const bgm = project.audio.bgm;
@@ -24,19 +26,23 @@ function bgmSrc(project: AdProject, assetBase: string): string | null {
   return null;
 }
 
-const PageScene: React.FC<{ page: AdPage; project: AdProject; assetBase: string; frames: number }> = ({
+const PageScene: React.FC<{ page: AdPage; project: AdProject; assetBase: string; frames: number; mediaStart: number }> = ({
   page,
   project,
   assetBase,
   frames,
+  mediaStart,
 }) => {
   const Visual = visualById(page.visualTemplateId).Component;
   const Motion = motionById(page.motionTemplateId).Component;
   return (
     <AbsoluteFill style={{ background: COLORS.ink }}>
-      <Motion page={page} durationInFrames={frames}>
-        <Visual page={page} product={project.product} assetBase={assetBase} />
-      </Motion>
+      {/* same-source consecutive pages resume the video from where the last left off */}
+      <MediaStartContext.Provider value={mediaStart}>
+        <Motion page={page} durationInFrames={frames}>
+          <Visual page={page} product={project.product} assetBase={assetBase} />
+        </Motion>
+      </MediaStartContext.Provider>
     </AbsoluteFill>
   );
 };
@@ -46,6 +52,7 @@ export const AdComposition: React.FC<AdProps> = ({ project, assetBase }) => {
   const fps = project.meta.fps || 30;
   const pages = project.pages;
   const offsets = pageOffsets(project);
+  const vStarts = videoStartFrames(project);
   const intervals = voIntervals(project);
   const ecFrames = endcardFrames(project);
   const Endcard = project.endcard.enabled ? endcardById(project.endcard.templateId) : undefined;
@@ -98,7 +105,7 @@ export const AdComposition: React.FC<AdProps> = ({ project, assetBase }) => {
           return (
             <Fragment key={p.id}>
               <TransitionSeries.Sequence durationInFrames={frames}>
-                <PageScene page={p} project={project} assetBase={assetBase} frames={frames} />
+                <PageScene page={p} project={project} assetBase={assetBase} frames={frames} mediaStart={vStarts[i]} />
               </TransitionSeries.Sequence>
               {spec && (
                 <TransitionSeries.Transition presentation={spec.presentation} timing={spec.timing} />

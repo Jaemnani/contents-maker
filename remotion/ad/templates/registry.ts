@@ -25,15 +25,23 @@ import * as vCanvasGrid from "./visual/canvas-grid";
 import * as vModelSelector from "./visual/model-selector";
 import * as vPlainCaption from "./visual/plain-caption";
 import * as vCompare2up from "./visual/compare-2up";
+import * as vSplitMediaText from "./visual/split-media-text";
+import * as vQuoteCard from "./visual/quote-card";
+import * as vBigStat from "./visual/big-stat";
 import * as mNone from "./motion/none";
 import * as mKenBurns from "./motion/ken-burns-zoom";
 import * as mPan from "./motion/pan";
 import * as mShrinkIntoUi from "./motion/shrink-into-ui";
 import * as mCaptionPop from "./motion/caption-pop";
+import * as mZoomOut from "./motion/zoom-out";
+import * as mDriftUp from "./motion/drift-up";
+import * as mRotateIn from "./motion/rotate-in";
 import * as tCut from "./transition/cut";
 import * as tFade from "./transition/fade";
 import * as tSlide from "./transition/slide";
 import * as tWipe from "./transition/wipe";
+import * as tFlip from "./transition/flip";
+import * as tClockWipe from "./transition/clock-wipe";
 import * as tZoomBlur from "./transition/zoom-blur";
 import * as tDreamyZoom from "./transition/dreamy-zoom";
 import * as eLogoBlurIn from "./endcard/logo-blur-in";
@@ -53,6 +61,9 @@ export const registry: {
     "model-selector": { meta: VISUAL_METAS["model-selector"], Component: vModelSelector.Component },
     "plain-caption": { meta: VISUAL_METAS["plain-caption"], Component: vPlainCaption.Component },
     "compare-2up": { meta: VISUAL_METAS["compare-2up"], Component: vCompare2up.Component },
+    "split-media-text": { meta: VISUAL_METAS["split-media-text"], Component: vSplitMediaText.Component },
+    "quote-card": { meta: VISUAL_METAS["quote-card"], Component: vQuoteCard.Component },
+    "big-stat": { meta: VISUAL_METAS["big-stat"], Component: vBigStat.Component },
   },
   motion: {
     none: { meta: MOTION_METAS["none"], Component: mNone.Component },
@@ -60,12 +71,17 @@ export const registry: {
     pan: { meta: MOTION_METAS["pan"], Component: mPan.Component },
     "shrink-into-ui": { meta: MOTION_METAS["shrink-into-ui"], Component: mShrinkIntoUi.Component },
     "caption-pop": { meta: MOTION_METAS["caption-pop"], Component: mCaptionPop.Component },
+    "zoom-out": { meta: MOTION_METAS["zoom-out"], Component: mZoomOut.Component },
+    "drift-up": { meta: MOTION_METAS["drift-up"], Component: mDriftUp.Component },
+    "rotate-in": { meta: MOTION_METAS["rotate-in"], Component: mRotateIn.Component },
   },
   transition: {
     cut: { meta: TRANSITION_METAS["cut"], make: tCut.make },
     fade: { meta: TRANSITION_METAS["fade"], make: tFade.make },
     slide: { meta: TRANSITION_METAS["slide"], make: tSlide.make },
     wipe: { meta: TRANSITION_METAS["wipe"], make: tWipe.make },
+    flip: { meta: TRANSITION_METAS["flip"], make: tFlip.make },
+    "clock-wipe": { meta: TRANSITION_METAS["clock-wipe"], make: tClockWipe.make },
     "zoom-blur": { meta: TRANSITION_METAS["zoom-blur"], make: tZoomBlur.make },
     "dreamy-zoom": { meta: TRANSITION_METAS["dreamy-zoom"], make: tDreamyZoom.make },
   },

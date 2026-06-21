@@ -80,6 +80,33 @@ export const VISUAL_METAS: Record<string, TemplateMeta> = {
     ],
     defaultDurationSec: 3,
   },
+  "split-media-text": {
+    id: "split-media-text",
+    category: "visual",
+    name: "상하 분할 (이미지+문구)",
+    describe: "Top media (60%) over a bottom brand panel; media enters fullscreen then springs into its box.",
+    hint: "위 이미지(60%)+아래 문구. 등장 시 전체화면→상단으로 좁혀져요(앞 페이지가 같은 미디어 전체화면이면 이어지는 느낌).",
+    compatibleSourceTypes: ["image", "video"],
+    defaultDurationSec: 3,
+  },
+  "quote-card": {
+    id: "quote-card",
+    category: "visual",
+    name: "인용 카드 (후기)",
+    describe: "Full-bleed dimmed media with a big centered quote + attribution — social proof.",
+    hint: "어둡게 깔린 배경 위에 큰 따옴표 인용구 + 출처. 후기/사회적 증거.",
+    compatibleSourceTypes: ["image", "video"],
+    defaultDurationSec: 3,
+  },
+  "big-stat": {
+    id: "big-stat",
+    category: "visual",
+    name: "큰 숫자 강조",
+    describe: "Dimmed media bg + one huge stat/number (the caption) + product label — punchy proof.",
+    hint: "자막을 아주 크게(숫자/통계 강조). 예: ‘10배’, ‘무료’.",
+    compatibleSourceTypes: ["image", "video"],
+    defaultDurationSec: 3,
+  },
 };
 
 /** Media slots a visual fills, with labels. Defaults to a single "메인 미디어" slot. */
@@ -128,6 +155,30 @@ export const MOTION_METAS: Record<string, TemplateMeta> = {
     hint: "내용이 통통 튀듯 등장(스프링 팝).",
     compatibleSourceTypes: ["image", "video"],
   },
+  "zoom-out": {
+    id: "zoom-out",
+    category: "motion",
+    name: "천천히 축소",
+    describe: "Slow zoom-out — starts pushed in, pulls back to reveal.",
+    hint: "확대된 상태에서 천천히 빠지며 드러나요(줌아웃).",
+    compatibleSourceTypes: ["image", "video"],
+  },
+  "drift-up": {
+    id: "drift-up",
+    category: "motion",
+    name: "위로 흐름",
+    describe: "Gentle upward drift (parallax feel).",
+    hint: "화면이 위로 천천히 흐르는 시네마틱 느낌.",
+    compatibleSourceTypes: ["image", "video"],
+  },
+  "rotate-in": {
+    id: "rotate-in",
+    category: "motion",
+    name: "회전하며 등장",
+    describe: "Subtle rotate + settle on entrance.",
+    hint: "살짝 기울었다 제자리로 돌아오며 등장.",
+    compatibleSourceTypes: ["image", "video"],
+  },
 };
 
 export const TRANSITION_METAS: Record<string, TemplateMeta> = {
@@ -135,6 +186,8 @@ export const TRANSITION_METAS: Record<string, TemplateMeta> = {
   fade: { id: "fade", category: "transition", name: "부드럽게 (페이드)", describe: "Soft crossfade between pages.", hint: "이전/다음 페이지가 부드럽게 겹치며 바뀜.", durationFrames: 12 },
   slide: { id: "slide", category: "transition", name: "옆으로 밀기", describe: "Next page slides in from the right.", hint: "다음 페이지가 오른쪽에서 밀려 들어와요.", durationFrames: 12 },
   wipe: { id: "wipe", category: "transition", name: "닦아내기 (와이프)", describe: "Directional wipe reveal into the next page.", hint: "한 방향으로 닦아내며 다음 페이지가 드러남.", durationFrames: 12 },
+  flip: { id: "flip", category: "transition", name: "플립 (3D 뒤집기)", describe: "3D card flip to the next page.", hint: "카드처럼 3D로 뒤집히며 전환.", durationFrames: 16 },
+  "clock-wipe": { id: "clock-wipe", category: "transition", name: "시계 와이프", describe: "Radial clock sweep reveal.", hint: "시계바늘처럼 원을 그리며 다음 페이지가 드러남.", durationFrames: 16 },
   "zoom-blur": { id: "zoom-blur", category: "transition", name: "확대 블러", describe: "Punchy zoom-blur burst (use before the endcard).", hint: "확 확대되며 흐려지는 강한 전환. 엔드카드 직전에 추천.", durationFrames: 14 },
   "dreamy-zoom": { id: "dreamy-zoom", category: "transition", name: "회전 확대", describe: "Dreamy rotating zoom blend.", hint: "살짝 회전하며 확대되는 몽환적 전환.", durationFrames: 18 },
 };

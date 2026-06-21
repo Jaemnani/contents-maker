@@ -1,12 +1,18 @@
 // Renders a page's media source full-bleed: pool/generated asset, upload, or a
-// placeholder gradient when unresolved. Videos always muted (VO/BGM own the audio).
-import React from "react";
-import { AbsoluteFill, Img, OffthreadVideo } from "remotion";
+// placeholder gradient when unresolved. Videos always muted (VO/BGM own the audio) and
+// LOOP, so a short clip keeps playing. Same-source consecutive pages resume continuously
+// via a negative-offset Sequence (Remotion wraps the looped time = (offset+frame) % len).
+import React, { useContext } from "react";
+import { AbsoluteFill, Img, Sequence, Video } from "remotion";
 import type { PageSource } from "@/lib/ad/schema";
 import { assetUrl, pathUrl, COLORS } from "@/remotion/lib/util";
 import { COVER } from "@/remotion/lib/style";
 
 const VIDEO_EXT = /\.(mp4|webm|mov)$/i;
+
+/** Frames to trim from the START of a video source — lets consecutive same-source pages
+ *  resume playback (set per-page by AdComposition via videoStartFrames). Default 0. */
+export const MediaStartContext = React.createContext(0);
 
 export function sourceUrl(source: PageSource, assetBase: string): { url: string; video: boolean } | null {
   if (source.kind === "asset") {
@@ -23,6 +29,7 @@ export function sourceUrl(source: PageSource, assetBase: string): { url: string;
 
 export const SourceLayer: React.FC<{ source: PageSource; assetBase: string }> = ({ source, assetBase }) => {
   const res = sourceUrl(source, assetBase);
+  const trimBefore = useContext(MediaStartContext);
   if (!res) {
     return (
       <AbsoluteFill
@@ -34,9 +41,18 @@ export const SourceLayer: React.FC<{ source: PageSource; assetBase: string }> = 
       </AbsoluteFill>
     );
   }
+  if (!res.video) {
+    return (
+      <AbsoluteFill>
+        <Img src={res.url} style={COVER} />
+      </AbsoluteFill>
+    );
+  }
+  const video = <Video src={res.url} muted loop style={COVER} />;
   return (
     <AbsoluteFill>
-      {res.video ? <OffthreadVideo src={res.url} muted style={COVER} /> : <Img src={res.url} style={COVER} />}
+      {/* shift local frame so the loop resumes where the previous same-source page ended */}
+      {trimBefore > 0 ? <Sequence from={-trimBefore} layout="none">{video}</Sequence> : video}
     </AbsoluteFill>
   );
 };

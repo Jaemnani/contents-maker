@@ -58,6 +58,34 @@ function VisualThumb({ id, brand }: { id: string; brand: string }) {
           <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", padding: "1px 4px", borderRadius: 3, background: brand, color: "#fff", fontSize: 5, fontWeight: 900, letterSpacing: 1 }}>VS</div>
         </div>
       );
+    case "split-media-text":
+      return (
+        <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column" }}>
+          <div style={{ position: "relative", flex: "0 0 60%" }}><Media /></div>
+          <div style={{ flex: 1, background: brand, display: "grid", placeItems: "center" }}>
+            <div style={{ width: "62%", height: "16%", borderRadius: 2, background: "rgba(255,255,255,0.92)" }} />
+          </div>
+        </div>
+      );
+    case "quote-card":
+      return (
+        <><Media style={{ filter: "brightness(0.55)" }} />
+          <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3 }}>
+            <div style={{ color: brand, fontSize: 18, fontWeight: 900, lineHeight: 0.6 }}>“</div>
+            <div style={{ width: "56%", height: "8%", borderRadius: 2, background: "#fff" }} />
+            <div style={{ width: "30%", height: "5%", borderRadius: 2, background: "rgba(255,255,255,0.6)" }} />
+          </div>
+        </>
+      );
+    case "big-stat":
+      return (
+        <><Media style={{ filter: "brightness(0.4)" }} />
+          <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2 }}>
+            <span style={{ color: brand, fontWeight: 900, fontSize: 22, lineHeight: 1 }}>10x</span>
+            <div style={{ width: "34%", height: "5%", borderRadius: 2, background: "rgba(255,255,255,0.85)" }} />
+          </div>
+        </>
+      );
     case "plain-caption":
     default:
       return (<><Media /><Bar pos="bottom" color={brand} h="13%" /></>);
@@ -72,6 +100,9 @@ function MotionThumb({ id }: { id: string }) {
   if (id === "shrink-into-ui") return <div style={{ position: "absolute", inset: 0, ...anim("tt-shrink", 2) }}><Media /></div>;
   if (id === "caption-pop")
     return (<><Media /><div style={{ position: "absolute", left: "20%", right: "20%", bottom: "16%", height: "16%", borderRadius: 3, background: "#fff", ...anim("tt-pop") }} /></>);
+  if (id === "zoom-out") return <div style={{ position: "absolute", inset: 0, animation: "tt-shrink 2s ease-in-out infinite" }}><Media /></div>;
+  if (id === "drift-up") return <div style={{ position: "absolute", inset: "-12%", animation: "tt-drifty 2.2s ease-in-out infinite" }}><Media /></div>;
+  if (id === "rotate-in") return <div style={{ position: "absolute", inset: "-6%", ...anim("tt-rotate", 1.8) }}><Media /></div>;
   return <Media />;
 }
 
@@ -86,6 +117,10 @@ function TransitionThumb({ id, brand }: { id: string; brand: string }) {
     return (<><Half c="#2b3a4a" label="A" /><div style={{ position: "absolute", inset: 0, animation: "tt-slide 1.4s ease-in-out infinite alternate" }}><Half c={brand} label="B" /></div></>);
   if (id === "wipe")
     return (<><Half c="#2b3a4a" label="A" /><div style={{ position: "absolute", inset: 0, animation: "tt-fade 1.4s steps(2) infinite alternate", clipPath: "polygon(0 0,55% 0,45% 100%,0 100%)" }}><Half c={brand} label="B" /></div></>);
+  if (id === "flip")
+    return (<><Half c="#2b3a4a" label="A" /><div style={{ position: "absolute", inset: 0, animation: "tt-flip 1.6s ease-in-out infinite", transformOrigin: "center" }}><Half c={brand} label="B" /></div></>);
+  if (id === "clock-wipe")
+    return (<><Half c="#2b3a4a" label="A" /><div style={{ position: "absolute", inset: 0, animation: "tt-fade 1.6s ease-in-out infinite alternate", clipPath: "polygon(50% 50%, 50% 0, 100% 0, 100% 100%, 50% 100%)" }}><Half c={brand} label="B" /></div></>);
   if (id === "zoom-blur")
     return (<div style={{ position: "absolute", inset: 0, animation: "tt-zoom 1.4s ease-in-out infinite", filter: "blur(.5px)" }}><Half c={brand} label="B" /></div>);
   if (id === "dreamy-zoom")
