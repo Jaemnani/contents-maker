@@ -9,6 +9,7 @@ import { loadFont as nanumMyeongjo } from "@remotion/google-fonts/NanumMyeongjo"
 import { loadFont as nanumPen } from "@remotion/google-fonts/NanumPenScript";
 import { loadFont as bebasNeue } from "@remotion/google-fonts/BebasNeue";
 import { loadFont as montserrat } from "@remotion/google-fonts/Montserrat";
+import { loadFont as elmsSans } from "@remotion/google-fonts/ElmsSans";
 
 type Loader = () => { fontFamily: string };
 
@@ -22,6 +23,7 @@ const LOADERS: Record<string, Loader> = {
   "Nanum Pen Script": nanumPen,
   "Bebas Neue": bebasNeue,
   Montserrat: montserrat,
+  "Elms Sans": elmsSans,
 };
 
 const cache: Record<string, string> = {};

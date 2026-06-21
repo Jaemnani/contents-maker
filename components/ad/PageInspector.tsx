@@ -31,6 +31,7 @@ const TITLE_FONTS: SelectOption[] = [
   { value: "Nanum Pen Script", label: "나눔손글씨 (펜)" },
   { value: "Bebas Neue", label: "베바스 (영문 임팩트)" },
   { value: "Montserrat", label: "몽세라 (영문 모던)" },
+  { value: "Elms Sans", label: "Elms Sans (영문)" },
 ];
 const TITLE_EFFECTS: SelectOption[] = [
   { value: "fade", label: "기본 페이드 (깔끔)" },
