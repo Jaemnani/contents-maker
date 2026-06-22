@@ -1,147 +1,106 @@
 "use client";
-// Landing: "new short" setup + recent projects list. Mounts the Wizard for an active composition.
+// Main landing = Ad maker: create (9-beat preset | empty) + topic (free text or trend pick)
+// + recent ad projects. Mounts AdEditor for an active project.
 import { useEffect, useState } from "react";
-import type { Composition, SourceType } from "@/lib/composition-types";
-import type { Language } from "@/lib/types";
-import { LANGUAGE_LABELS } from "@/lib/channels";
-import { TOPICS, DEFAULT_TOPIC_ID, pickText } from "@/lib/render/strings";
-import { createComposition, saveComposition, listCompositions, getComposition, assetThumbUrl, type TopicCandidate } from "@/lib/client/wizard";
-import Wizard from "@/components/wizard/Wizard";
+import Link from "next/link";
+import type { AdProject } from "@/lib/ad/schema";
+import { createAdProject, listAdProjects, getAdProject } from "@/lib/client/ad";
+import { pickText } from "@/lib/render/strings";
 import TopicSuggest from "@/components/wizard/TopicSuggest";
-
-const LANGS: Language[] = ["ko", "ja", "en"];
+import type { TopicCandidate } from "@/lib/client/wizard";
+import AdEditor from "@/components/ad/AdEditor";
 
 export default function Home() {
-  const [comp, setComp] = useState<Composition | null>(null);
-  const [recent, setRecent] = useState<Composition[]>([]);
-  const [sourceType, setSourceType] = useState<SourceType>("image");
-  const [language, setLanguage] = useState<Language>("ko");
-  const [topicId, setTopicId] = useState<string>(DEFAULT_TOPIC_ID);
+  const [project, setProject] = useState<AdProject | null>(null);
+  const [recent, setRecent] = useState<AdProject[]>([]);
+  const [topic, setTopic] = useState("");
   const [chosen, setChosen] = useState<TopicCandidate | null>(null);
   const [creating, setCreating] = useState(false);
 
-  function refresh() {
-    listCompositions().then(setRecent).catch(() => setRecent([]));
-  }
   useEffect(() => {
-    if (!comp) refresh();
-  }, [comp]);
+    if (!project) listAdProjects().then(setRecent).catch(() => setRecent([]));
+  }, [project]);
 
-  async function create() {
+  async function create(preset: "tapnow-9beat" | "empty") {
     setCreating(true);
     try {
-      // Start/end cards always use the selected topic TEMPLATE. A recommended topic only
-      // supplies the main comparison-pair prompt (+ a readable label for the recent list).
-      const c = await createComposition(sourceType, language, topicId);
-      if (chosen) {
-        c.comparePrompt = chosen.comparePrompt;
-        c.topicTitle = pickText(chosen.headline, language);
-        setComp(await saveComposition(c));
-      } else {
-        setComp(c);
-      }
+      setProject(
+        await createAdProject({
+          preset,
+          topic: topic.trim() || undefined,
+          seedPrompt: chosen?.comparePrompt, // carry the suggested base image prompt into the project
+        })
+      );
     } finally {
       setCreating(false);
     }
   }
 
-  if (comp) return <Wizard comp={comp} onExit={() => setComp(null)} />;
+  if (project) return <AdEditor project={project} onExit={() => setProject(null)} />;
 
   return (
     <main className="mx-auto w-full max-w-[1280px] grow px-5 py-6">
       <header className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight">
-            Shorts <span className="text-primary">Maker</span>
+            광고 <span className="text-primary">메이커</span>
           </h1>
-          <p className="text-sm text-muted">같은 프롬프트 다른 AI — 9:16 비교 숏폼</p>
+          <p className="text-sm text-muted">페이지 조립형 제품 광고 숏폼 — 9:16</p>
         </div>
-        <div className="flex gap-2">
-          <a href="/ad" className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm font-medium text-muted transition-colors duration-200 hover:border-empathy hover:text-ink">
-            광고 메이커 →
-          </a>
-          <a href="/studio" className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm font-medium text-muted transition-colors duration-200 hover:border-empathy hover:text-ink">
-            Source Studio →
-          </a>
-        </div>
+        <Link href="/studio" className="rounded-md border border-border bg-surface px-3 py-1.5 text-sm font-medium text-muted transition-colors duration-200 hover:border-empathy hover:text-ink">
+          이미지·영상 개별 생성 →
+        </Link>
       </header>
 
       <section className="mb-8 rounded-2xl border border-border bg-surface p-5">
-        <h2 className="mb-4 text-base font-bold">새 영상 만들기</h2>
-        <div className="flex flex-wrap items-end gap-5">
-          <div>
-            <div className="mb-1 text-xs text-muted">비교 타입</div>
-            <div className="flex gap-2">
-              {(["image", "video"] as SourceType[]).map((t) => (
-                <button key={t} onClick={() => setSourceType(t)} className={`rounded-md border px-4 py-2 text-sm transition-all duration-200 ${sourceType === t ? "border-empathy bg-empathy/10 text-ink" : "border-border text-muted hover:border-empathy"}`}>
-                  {t === "image" ? "이미지" : "영상"}
-                </button>
-              ))}
-            </div>
+        <h2 className="mb-4 text-base font-bold">새 광고 만들기</h2>
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="min-w-[280px] flex-1">
+            <div className="mb-1 text-xs text-muted">주제 (직접 입력 또는 아래 추천에서 선택)</div>
+            <input
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              placeholder="예: AI 영상 에디터"
+              className="w-full rounded-md border border-border bg-surface px-3 py-2 text-base outline-none focus:border-primary"
+            />
           </div>
-          <div>
-            <div className="mb-1 text-xs text-muted">기본 언어</div>
-            <div className="flex gap-2">
-              {LANGS.map((l) => (
-                <button key={l} onClick={() => setLanguage(l)} className={`rounded-md border px-4 py-2 text-sm transition-all duration-200 ${language === l ? "border-empathy bg-empathy/10 text-ink" : "border-border text-muted hover:border-empathy"}`}>
-                  {LANGUAGE_LABELS[l]}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <div className="mb-1 text-xs text-muted">주제 템플릿 <span className="text-[10px]">(시작·끝 카드)</span></div>
-            <div className="flex gap-2">
-              {Object.values(TOPICS).map((t) => (
-                <button key={t.id} onClick={() => setTopicId(t.id)} className={`rounded-md border px-4 py-2 text-sm transition-all duration-200 ${topicId === t.id ? "border-empathy bg-empathy/10 text-ink" : "border-border text-muted hover:border-empathy"}`}>
-                  {t.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <button onClick={create} disabled={creating} className="rounded-md bg-primary px-5 py-2 text-sm font-semibold text-white transition-all duration-200 hover:bg-primary-dark active:scale-[0.98] disabled:opacity-40">
-            {creating ? "생성 중…" : "시작 →"}
+          <button onClick={() => create("tapnow-9beat")} disabled={creating} className="rounded-md bg-primary px-5 py-2 text-sm font-semibold text-white transition-all duration-200 hover:bg-primary-dark active:scale-[0.98] disabled:opacity-40">
+            {creating ? "생성 중…" : "9-beat 프리셋으로 시작"}
+          </button>
+          <button onClick={() => create("empty")} disabled={creating} className="rounded-md border border-border bg-surface px-5 py-2 text-sm font-semibold text-ink transition-all duration-200 hover:border-empathy active:scale-[0.98] disabled:opacity-40">
+            빈 프로젝트
           </button>
         </div>
 
-        <TopicSuggest language={language} chosen={chosen} onPick={setChosen} />
-        {chosen && (
-          <p className="mt-2 text-xs text-empathy">
-            선택된 주제: <span className="font-semibold">{pickText(chosen.headline, language)}</span> — 본론 비교 쌍 생성 프롬프트로 사용됩니다. (시작·끝 카드는 템플릿 그대로)
-          </p>
-        )}
+        <TopicSuggest
+          language="ko"
+          chosen={chosen}
+          onPick={(c) => {
+            setChosen(c);
+            if (c) setTopic(pickText(c.headline, "ko") || c.term);
+          }}
+        />
       </section>
 
       <section>
-        <h2 className="mb-3 text-base font-bold">최근 작업</h2>
+        <h2 className="mb-3 text-base font-bold">최근 광고 프로젝트</h2>
         {recent.length === 0 ? (
-          <p className="text-sm text-muted">아직 작업이 없습니다. 위에서 새 영상을 시작하세요.</p>
+          <p className="text-sm text-muted">아직 프로젝트가 없습니다. 위에서 새 광고를 시작하세요.</p>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
-            {recent.map((c) => {
-              const main = c.stages.find((s) => s.id === "main");
-              const thumb = main?.aRef ? assetThumbUrl(main.aRef) : null;
-              return (
-                <button
-                  key={c.compId}
-                  onClick={() => getComposition(c.compId).then(setComp)}
-                  className="overflow-hidden rounded-lg border border-border bg-surface text-left transition-all duration-200 hover:border-empathy hover:-translate-y-px"
-                >
-                  <div className="aspect-[9/16] w-full bg-ink/5">
-                    {thumb ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={thumb} alt="" className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="grid h-full place-items-center text-xs text-muted">미리보기 없음</div>
-                    )}
-                  </div>
-                  <div className="px-2 py-1.5">
-                    <div className="truncate text-xs font-medium text-ink">{c.topicTitle || TOPICS[c.topicId]?.label || c.compId}</div>
-                    <div className="text-[11px] text-muted">{c.sourceType} · {new Date(c.createdAt).toLocaleString()}</div>
-                  </div>
-                </button>
-              );
-            })}
+            {recent.map((p) => (
+              <button
+                key={p.projectId}
+                onClick={() => getAdProject(p.projectId).then(setProject)}
+                className="rounded-lg border border-border bg-surface p-3 text-left transition-all duration-200 hover:border-empathy hover:-translate-y-px"
+              >
+                <div className="truncate text-sm font-semibold text-ink">{p.meta.topic || p.product.name}</div>
+                <div className="mt-1 text-[11px] text-muted">
+                  {p.pages.length}페이지 · {new Date(p.createdAt).toLocaleString()}
+                </div>
+                <div className="mt-0.5 text-[11px] text-muted">{p.latestRender ? "렌더 완료" : "미렌더"}</div>
+              </button>
+            ))}
           </div>
         )}
       </section>
