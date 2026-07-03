@@ -12,8 +12,9 @@ export const Component: React.FC<VisualProps> = ({ page, product, assetBase }) =
   const { fps } = useVideoConfig();
   const brand = product.brandColor || BRAND_FALLBACK;
   const s = spring({ frame: frame - 3, fps, config: { damping: 16, stiffness: 170 }, durationInFrames: 18 });
-  // highlight walks down the list, then settles on the 2nd entry
-  const hi = Math.min(1, Math.floor(interpolate(frame, [10, 40], [0, MODELS.length], { extrapolateLeft: "clamp", extrapolateRight: "clamp" })) % MODELS.length || 1);
+  // highlight walks down the list (frames 10→34), then settles on the 2nd entry
+  const walked = Math.floor(interpolate(frame, [10, 34], [0, MODELS.length - 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }));
+  const hi = frame < 34 ? walked : 1;
   return (
     <AbsoluteFill>
       <SourceLayer source={page.source} assetBase={assetBase} />

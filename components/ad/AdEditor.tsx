@@ -25,6 +25,10 @@ export default function AdEditor({ project: initial, onExit }: { project: AdProj
   const [errMsg, setErrMsg] = useState("");
   const [ttsProgress, setTtsProgress] = useState<{ done: number; total: number } | null>(null);
   const [ttsBusyId, setTtsBusyId] = useState<string | null>(null);
+  const busyRef = useRef(false); // mirror for handlers with [] deps (keydown undo/redo)
+  useEffect(() => {
+    busyRef.current = busy;
+  }, [busy]);
 
   const imageModels: SelectOption[] = useMemo(
     () => (data ? data.models.filter((m) => m.modality === "image").map((m) => ({ value: m.uid, label: m.label })) : []),
@@ -54,6 +58,12 @@ export default function AdEditor({ project: initial, onExit }: { project: AdProj
     const now = Date.now();
     if (undoRef.current.length && now - lastPushAt.current < HISTORY_COALESCE_MS) {
       lastPushAt.current = now; // within a burst — pre-burst snapshot already captured
+      // an edit still invalidates redo, even when coalesced — otherwise redo after an
+      // undo "re-does" on top of the newer edit and corrupts the timeline
+      if (redoRef.current.length) {
+        redoRef.current = [];
+        syncHistoryFlags();
+      }
       return;
     }
     lastPushAt.current = now;
@@ -63,16 +73,18 @@ export default function AdEditor({ project: initial, onExit }: { project: AdProj
     syncHistoryFlags();
   }
   function undo() {
-    if (!undoRef.current.length) return;
+    if (!undoRef.current.length || busyRef.current) return;
     redoRef.current.push(projRef.current);
     setBoth(undoRef.current.pop()!);
+    lastPushAt.current = 0; // the first edit after an undo must never coalesce into the pre-undo burst
     scheduleSave();
     syncHistoryFlags();
   }
   function redo() {
-    if (!redoRef.current.length) return;
+    if (!redoRef.current.length || busyRef.current) return;
     undoRef.current.push(projRef.current);
     setBoth(redoRef.current.pop()!);
+    lastPushAt.current = 0;
     scheduleSave();
     syncHistoryFlags();
   }
@@ -112,10 +124,28 @@ export default function AdEditor({ project: initial, onExit }: { project: AdProj
     pushHistory();
     setBoth(p);
   }
-  /** Adopt a project WITHOUT recording history — for render file ops (add/delete), which
-   *  aren't editor edits and whose files are gone, so undoing them would dangle. */
-  function adoptProject(p: AdProject) {
-    setBoth(p);
+  /**
+   * Merge only the fields a server op actually changed into the CURRENT local state.
+   * Never wholesale-adopt a long op's snapshot — it predates any edits the user typed
+   * while the op ran, and adopting it would silently revert them.
+   */
+  function mergePageFields(server: AdProject, pageId: string, fields: (keyof AdPage)[]) {
+    const sp = server.pages.find((p) => p.id === pageId);
+    if (!sp) return; // page deleted meanwhile — keep the deletion
+    setBoth({
+      ...projRef.current,
+      pages: projRef.current.pages.map((p) => {
+        if (p.id !== pageId) return p;
+        const patch: Partial<AdPage> = {};
+        for (const f of fields) (patch as Record<string, unknown>)[f] = sp[f];
+        return { ...p, ...patch };
+      }),
+    });
+  }
+  function mergeProjectFields(server: AdProject, fields: (keyof AdProject)[]) {
+    const patch: Partial<AdProject> = {};
+    for (const f of fields) (patch as Record<string, unknown>)[f] = server[f];
+    setBoth({ ...projRef.current, ...patch });
   }
   function patchProject(patch: Partial<AdProject>) {
     pushHistory();
@@ -200,7 +230,7 @@ export default function AdEditor({ project: initial, onExit }: { project: AdProj
     setErrMsg("");
     try {
       await flushSave(); // TTS must narrate the text as currently typed
-      applyProject(await ttsAdPage(projRef.current.projectId, pageId));
+      mergePageFields(await ttsAdPage(projRef.current.projectId, pageId), pageId, ["voAudio"]);
     } catch (e) {
       setErrMsg((e as Error).message);
     } finally {
@@ -221,7 +251,7 @@ export default function AdEditor({ project: initial, onExit }: { project: AdProj
         // re-resolve each target — pages may have been deleted/edited mid-batch
         const page = projRef.current.pages.find((p) => p.id === ids[i]);
         if (page && page.vo.trim()) {
-          applyProject(await ttsAdPage(projRef.current.projectId, ids[i]));
+          mergePageFields(await ttsAdPage(projRef.current.projectId, ids[i]), ids[i], ["voAudio"]);
         }
         setTtsProgress({ done: i + 1, total: ids.length });
       }
@@ -244,8 +274,8 @@ export default function AdEditor({ project: initial, onExit }: { project: AdProj
           ← 목록
         </button>
         <div className="flex gap-1">
-          <button onClick={undo} disabled={!canUndo} title="실행 취소 (⌘/Ctrl+Z)" className="rounded-md border border-border bg-surface px-2.5 py-1.5 text-sm text-muted transition-all duration-200 hover:border-empathy hover:text-ink disabled:opacity-30">↶</button>
-          <button onClick={redo} disabled={!canRedo} title="다시 실행 (⌘/Ctrl+Shift+Z)" className="rounded-md border border-border bg-surface px-2.5 py-1.5 text-sm text-muted transition-all duration-200 hover:border-empathy hover:text-ink disabled:opacity-30">↷</button>
+          <button onClick={undo} disabled={!canUndo || busy} title="실행 취소 (⌘/Ctrl+Z)" className="rounded-md border border-border bg-surface px-2.5 py-1.5 text-sm text-muted transition-all duration-200 hover:border-empathy hover:text-ink disabled:opacity-30">↶</button>
+          <button onClick={redo} disabled={!canRedo || busy} title="다시 실행 (⌘/Ctrl+Shift+Z)" className="rounded-md border border-border bg-surface px-2.5 py-1.5 text-sm text-muted transition-all duration-200 hover:border-empathy hover:text-ink disabled:opacity-30">↷</button>
         </div>
         <h1 className="text-lg font-extrabold tracking-tight">광고 메이커</h1>
         <span className="text-xs text-muted">{project.projectId}</span>
@@ -287,7 +317,7 @@ export default function AdEditor({ project: initial, onExit }: { project: AdProj
           </div>
         </div>
         <ProductPanel product={project.product} onProduct={(p) => patchProject({ product: p })} />
-        <BgmPanel project={project} onAudio={(audio) => patchProject({ audio })} onProject={applyProject} onFlush={flushSave} />
+        <BgmPanel project={project} onAudio={(audio) => patchProject({ audio })} onProject={(p) => mergeProjectFields(p, ["audio"])} onFlush={flushSave} />
       </section>
 
       {errMsg && <p className="mb-3 rounded-md bg-danger/10 px-3 py-2 text-xs text-danger">{errMsg}</p>}
@@ -317,7 +347,6 @@ export default function AdEditor({ project: initial, onExit }: { project: AdProj
                 page={selected}
                 imageModels={imageModels}
                 onPatch={(patch) => patchPage(selected.id, patch)}
-                onProject={applyProject}
                 onProductName={(name) => patchProject({ product: { ...projRef.current.product, name } })}
                 onTts={runTts}
                 ttsBusy={ttsBusyId === selected.id || busy}
@@ -334,7 +363,7 @@ export default function AdEditor({ project: initial, onExit }: { project: AdProj
             <h2 className="mb-2 text-sm font-bold">미리보기</h2>
             <PlayerPreview project={project} />
           </div>
-          <AdRenderPanel project={project} busy={busy} onBusy={setBusy} onProject={adoptProject} onFlush={flushSave} />
+          <AdRenderPanel project={project} busy={busy} onBusy={setBusy} onProject={(p) => mergeProjectFields(p, ["latestRender", "renderHistory"])} onFlush={flushSave} />
         </aside>
       </div>
 

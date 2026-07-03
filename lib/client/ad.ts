@@ -8,6 +8,60 @@ async function jsonOrThrow(res: Response) {
   return d;
 }
 
+// ── automation ─────────────────────────────────────────────────────────────────
+export interface AutoSteps {
+  text: boolean;
+  image: boolean;
+  tts: boolean;
+  bgm: boolean;
+  render: boolean;
+}
+export interface AutoConfig {
+  id: string;
+  name: string;
+  templateProjectId: string;
+  enabled: boolean;
+  dailyCount: number;
+  topicProvider: string;
+  topicKeyword: string;
+  imageModel: string; // default model uid ("" = cheapest)
+  regen: string[]; // "pageIndex:slotKey" of slots to regenerate (rest reuse template image)
+  slotModels: Record<string, string>; // per-slot model override
+  slotLinks: Record<string, string>; // "i:slot" copies the image of another "j:slot"
+  steps: AutoSteps;
+  createdAt: string;
+  updatedAt: string;
+  lastRunAt?: string;
+}
+export interface AutoRunResult {
+  projectId: string;
+  topic: string;
+  steps: string[];
+  warnings: string[];
+  renderPath: string | null;
+}
+
+export async function listAutoConfigs(): Promise<AutoConfig[]> {
+  return (await jsonOrThrow(await fetch("/api/ad/automation"))).configs ?? [];
+}
+export async function saveAutoConfig(cfg: Partial<AutoConfig>): Promise<AutoConfig> {
+  return (
+    await jsonOrThrow(
+      await fetch("/api/ad/automation", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(cfg) })
+    )
+  ).config;
+}
+export async function deleteAutoConfig(id: string): Promise<void> {
+  await jsonOrThrow(await fetch(`/api/ad/automation?id=${encodeURIComponent(id)}`, { method: "DELETE" }));
+}
+export async function runAutoConfig(configId: string): Promise<AutoRunResult> {
+  return (
+    await jsonOrThrow(
+      await fetch("/api/ad/automation/run", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ configId }) })
+    )
+  ).result;
+}
+
 const post = (body: unknown) =>
   fetch("/api/ad/project", {
     method: "POST",

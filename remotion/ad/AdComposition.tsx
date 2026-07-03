@@ -16,6 +16,7 @@ import {
   voIntervals,
   bgmVolumeAt,
   videoStartFrames,
+  videoSourceKey,
 } from "@/remotion/ad/lib/timeline";
 import { MediaStartContext } from "@/remotion/ad/components/SourceLayer";
 
@@ -35,10 +36,14 @@ const PageScene: React.FC<{ page: AdPage; project: AdProject; assetBase: string;
 }) => {
   const Visual = visualById(page.visualTemplateId).Component;
   const Motion = motionById(page.motionTemplateId).Component;
+  const ctx = React.useMemo(
+    () => ({ frames: mediaStart, key: videoSourceKey(page.source) }),
+    [mediaStart, page.source]
+  );
   return (
     <AbsoluteFill style={{ background: COLORS.ink }}>
-      {/* same-source consecutive pages resume the video from where the last left off */}
-      <MediaStartContext.Provider value={mediaStart}>
+      {/* same-source consecutive pages resume the PRIMARY video from where the last left off */}
+      <MediaStartContext.Provider value={ctx}>
         <Motion page={page} durationInFrames={frames}>
           <Visual page={page} product={project.product} assetBase={assetBase} />
         </Motion>

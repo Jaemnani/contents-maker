@@ -51,14 +51,43 @@ export async function createAdProject(opts: { preset?: AdPreset; topic?: string;
   return project;
 }
 
-/** zod-validated write — the single mutation boundary. */
-export async function writeAdProject(data: unknown): Promise<AdProject> {
+// Per-project write lock: index.json mutations are read-modify-write (render add/remove,
+// TTS/BGM/page-image delta writes, whole-project saves). Without serialization two
+// overlapping ops last-writer-wins and silently drop each other's result.
+const projectLocks = new Map<string, Promise<unknown>>();
+export function withProjectLock<T>(projectId: string, fn: () => Promise<T>): Promise<T> {
+  const prev = projectLocks.get(projectId) ?? Promise.resolve();
+  const next = prev.then(fn, fn); // run regardless of the previous op's outcome
+  projectLocks.set(projectId, next.catch(() => {})); // keep the chain alive on errors
+  return next;
+}
+
+/** Serialized read→mutate→write for one project (the safe way to do delta updates). */
+export async function mutateAdProject(projectId: string, mutator: (p: AdProject) => void | Promise<void>): Promise<AdProject> {
+  return withProjectLock(projectId, async () => {
+    const project = await readAdProject(projectId);
+    await mutator(project);
+    return writeAdProjectUnlocked(project);
+  });
+}
+
+/** zod-validated write — the single mutation boundary (atomic tmp+rename). */
+async function writeAdProjectUnlocked(data: unknown): Promise<AdProject> {
   const project = parseAdProject(data);
   project.updatedAt = new Date().toISOString();
   const dir = projectDirAbs(project.projectId);
   await fs.mkdir(dir, { recursive: true });
-  await fs.writeFile(projectFile(project.projectId), JSON.stringify(project, null, 2), "utf8");
+  const file = projectFile(project.projectId);
+  const tmp = `${file}.tmp`;
+  await fs.writeFile(tmp, JSON.stringify(project, null, 2), "utf8");
+  await fs.rename(tmp, file); // atomic — a concurrent read never sees a torn file
   return project;
+}
+
+/** Whole-project write, serialized behind the project lock. */
+export async function writeAdProject(data: unknown): Promise<AdProject> {
+  const project = parseAdProject(data);
+  return withProjectLock(project.projectId, () => writeAdProjectUnlocked(project));
 }
 
 export async function readAdProject(projectId: string): Promise<AdProject> {
@@ -87,21 +116,21 @@ export async function listAdProjects(): Promise<AdProject[]> {
 
 /** Append a finished render (newest-first history + latest pointer). */
 export async function addAdRender(projectId: string, relPath: string): Promise<AdProject> {
-  const project = await readAdProject(projectId);
-  project.latestRender = relPath;
-  project.renderHistory = [{ path: relPath, createdAt: new Date().toISOString() }, ...(project.renderHistory ?? [])];
-  return writeAdProject(project);
+  return mutateAdProject(projectId, (project) => {
+    project.latestRender = relPath;
+    project.renderHistory = [{ path: relPath, createdAt: new Date().toISOString() }, ...(project.renderHistory ?? [])];
+  });
 }
 
 /** Delete one render: drop from history, fix the latest pointer, unlink the file. */
 export async function removeAdRender(projectId: string, relPath: string): Promise<AdProject> {
-  const project = await readAdProject(projectId);
-  project.renderHistory = (project.renderHistory ?? []).filter((r) => r.path !== relPath);
-  if (project.latestRender === relPath) project.latestRender = project.renderHistory[0]?.path ?? null;
-  try {
-    await fs.unlink(safeOutputsPath(relPath.replace(/^outputs\//, "")));
-  } catch {
-    /* already gone — keep the metadata removal */
-  }
-  return writeAdProject(project);
+  return mutateAdProject(projectId, async (project) => {
+    project.renderHistory = (project.renderHistory ?? []).filter((r) => r.path !== relPath);
+    if (project.latestRender === relPath) project.latestRender = project.renderHistory[0]?.path ?? null;
+    try {
+      await fs.unlink(safeOutputsPath(relPath.replace(/^outputs\//, "")));
+    } catch {
+      /* already gone — keep the metadata removal */
+    }
+  });
 }

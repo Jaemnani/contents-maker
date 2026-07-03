@@ -154,3 +154,87 @@ export async function composeAdPages(project: AdProject): Promise<ComposeResult>
   }
   return { ...out, model };
 }
+
+// ── automation: fill text into a FIXED page structure (template reuse) ──────────
+const zTextPage = z.object({
+  caption: z.string(),
+  vo: z.string(),
+  imagePrompt: z.string().optional(),
+  clipQuery: z.string().optional(),
+});
+const zTextOutput = z.object({ pages: z.array(zTextPage) });
+
+/**
+ * Keep the template's page structure (visual/motion/transition/styles) and only have the
+ * LLM write each page's caption + narration (+ image prompt) for the given topic.
+ */
+export async function composeTextForPages(project: AdProject): Promise<{ pages: AdPage[]; warnings: string[] }> {
+  const model = getAdComposeModel();
+  const topic = project.meta.topic || project.product.oneLiner;
+  const roles = project.pages
+    .map((p, i) => `${i + 1}. ${VISUAL_METAS[p.visualTemplateId]?.name ?? p.visualTemplateId} [${p.sourceType}]`)
+    .join("\n");
+  const sys = [
+    "You are a short-form ad scriptwriter for a 9:16 vertical product ad (casual spoken Korean, ~요체, fast pacing).",
+    "The page LAYOUT/STRUCTURE is FIXED. Write the on-screen caption + narration for EACH page, matching its role.",
+    `EVERYTHING must be about the TOPIC: "${topic}". Do NOT mention any unrelated subject, prior campaign, or stray keyword — write fresh copy for this topic only.`,
+    '"brand" is just the product/brand name to mention naturally; "cta" is the call-to-action. There is no other product context — derive all benefits/claims from the TOPIC.',
+    "Structure overall: hook → reveal/demo → value → social proof/result → final push.",
+    "",
+    "PAGES (fixed order; output EXACTLY one text entry per page, same count):",
+    roles,
+    "",
+    "RULES:",
+    "- caption: on-screen Korean text, <=20 characters, punchy, about the TOPIC.",
+    "- vo: natural spoken Korean (~요체, 반말 금지), 2-4 seconds (~15-30 syllables), no exaggeration / unverifiable claims / competitor disparagement.",
+    '- 2분할 비교(compare) pages: the caption labels two options (A/B) and the imagePrompt should describe a SINGLE clear subject for the slot (NOT a "split screen").',
+    '- image pages: add "imagePrompt" (vivid English image-gen prompt, vertical 9:16, no text in image). video pages: add "clipQuery" (short English stock-clip hint).',
+    `- Output ONLY this JSON: {"pages":[${"{\"caption\":\"...\",\"vo\":\"...\",\"imagePrompt\":\"...\"}"}]} with exactly ${project.pages.length} entries.`,
+  ].join("\n");
+  // only brand identity — NOT the template's stale oneLiner/valueProps (which describe other topics)
+  const user = JSON.stringify({ topic, brand: project.product.name, cta: project.product.cta });
+
+  const res = await fetch(`${OPENROUTER_BASE}/chat/completions`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({
+      model,
+      max_tokens: 6000,
+      temperature: 0.7,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: sys },
+        { role: "user", content: user },
+      ],
+    }),
+  });
+  if (!res.ok) throw await toError(res);
+  const json = await res.json();
+  const content: string = json.choices?.[0]?.message?.content ?? "";
+  const parsed = zTextOutput.parse(parseJsonLoose(content));
+
+  const warnings: string[] = [];
+  if (parsed.pages.length < project.pages.length) {
+    warnings.push(`대본 텍스트가 ${parsed.pages.length}개로 페이지 수(${project.pages.length})보다 적습니다 — 나머지 페이지의 문구를 비웠습니다.`);
+  }
+  const pages = project.pages.map((p, i) => {
+    const t = parsed.pages[i];
+    if (!t) {
+      // LLM returned fewer entries — BLANK the topic-specific copy instead of keeping the
+      // template's previous-campaign captions/VO (which would leak into the new video).
+      return { ...p, caption: "", vo: "", voAudio: undefined, imagePrompt: undefined, clipQuery: undefined };
+    }
+    if (t.caption.length > 20) warnings.push(`페이지 ${i + 1}: 자막이 20자를 넘습니다 (${t.caption.length}자)`);
+    return {
+      ...p,
+      caption: t.caption,
+      vo: t.vo,
+      // the vo text changed → the template's old narration audio no longer matches; drop
+      // it so a TTS-less run can't render old-topic voiceover (durations fall back).
+      voAudio: t.vo === p.vo ? p.voAudio : undefined,
+      imagePrompt: p.sourceType === "image" ? t.imagePrompt ?? p.imagePrompt : p.imagePrompt,
+      clipQuery: p.sourceType === "video" ? t.clipQuery ?? p.clipQuery : p.clipQuery,
+    };
+  });
+  return { pages, warnings };
+}

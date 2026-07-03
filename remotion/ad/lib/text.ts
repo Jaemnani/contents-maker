@@ -17,20 +17,28 @@ export function textCss(page: AdPage, opts: { size: number; weight: number; colo
   };
 }
 
-/** Intro animation for the text block (+ a full-frame film overlay opacity for "film"). */
+/**
+ * Intro animation for the text block (+ a full-frame film overlay opacity for "film").
+ * `durationInFrames` (when known) compresses the ramps on short pages so the text is
+ * never still invisible/mid-wipe when the page ends — keyframes assume ~32+ frames.
+ */
 export function introAnim(
   frame: number,
   fps: number,
   effect: AdPage["titleEffect"],
-  brand: string
+  brand: string,
+  durationInFrames?: number
 ): { anim: React.CSSProperties; filmOpacity: number } {
-  const fIn = (a: number, b: number) => interpolate(frame, [a, b], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  const spr = spring({ frame: frame - 2, fps, config: { damping: 18, stiffness: 120 }, durationInFrames: 20 });
+  // scale factor: full-speed ramps need ~32 frames; shorter pages compress proportionally
+  const k = durationInFrames && durationInFrames < 32 ? Math.max(durationInFrames, 2) / 32 : 1;
+  const fIn = (a: number, b: number) =>
+    interpolate(frame, [Math.round(a * k), Math.max(Math.round(a * k) + 1, Math.round(b * k))], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const spr = spring({ frame: frame - Math.round(2 * k), fps, config: { damping: 18, stiffness: 120 }, durationInFrames: Math.max(6, Math.round(20 * k)) });
   switch (effect) {
     case "film":
       return { filmOpacity: fIn(0, 12) * 0.42, anim: { opacity: fIn(8, 18), clipPath: `inset(0 ${(1 - fIn(8, 26)) * 100}% 0 0)` } };
     case "blur":
-      return { filmOpacity: 0, anim: { opacity: fIn(2, 14), filter: `blur(${interpolate(frame, [2, 22], [22, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" })}px)` } };
+      return { filmOpacity: 0, anim: { opacity: fIn(2, 14), filter: `blur(${interpolate(fIn(2, 22), [0, 1], [22, 0])}px)` } };
     case "rise":
       return { filmOpacity: 0, anim: { opacity: fIn(2, 12), clipPath: `inset(${(1 - spr) * 100}% 0 0 0)`, transform: `translateY(${interpolate(spr, [0, 1], [44, 0])}px)` } };
     case "pop":

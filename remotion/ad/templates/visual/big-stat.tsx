@@ -5,16 +5,18 @@ import type { VisualProps } from "@/remotion/ad/types";
 import { SourceLayer } from "@/remotion/ad/components/SourceLayer";
 import { BRAND_FALLBACK } from "@/remotion/ad/components/CaptionBanner";
 import { textCss, introAnim, backdropShadow } from "@/remotion/ad/lib/text";
+import { pageFrames } from "@/remotion/ad/lib/timeline";
 
 export const Component: React.FC<VisualProps> = ({ page, product, assetBase }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const brand = product.brandColor || BRAND_FALLBACK;
-  const { anim } = introAnim(frame, fps, page.titleEffect ?? "pop", brand);
+  const { anim, filmOpacity } = introAnim(frame, fps, page.titleEffect ?? "pop", brand, pageFrames(page, fps));
   return (
     <AbsoluteFill style={{ background: "#0b1215" }}>
       <SourceLayer source={page.source} assetBase={assetBase} />
       <AbsoluteFill style={{ background: `radial-gradient(circle at 50% 42%, rgba(8,12,18,0.45) 0%, rgba(8,12,18,0.82) 70%)` }} />
+      {filmOpacity > 0 && <AbsoluteFill style={{ background: `rgba(8,12,18,${filmOpacity})` }} />}
       <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", padding: "0 60px", flexDirection: "column", gap: 18 }}>
         <div style={{ ...textCss(page, { size: 200, weight: 900, color: brand }), textAlign: "center", whiteSpace: "pre-line", lineHeight: 1, textShadow: backdropShadow("none"), ...anim }}>
           {page.caption}

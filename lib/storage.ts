@@ -161,11 +161,22 @@ export async function readGlobalIndex(): Promise<SourceEntry[]> {
   }
 }
 
+// appends are read-modify-write on one file — serialize them (two generations finishing
+// together must not clobber each other's entry) and write atomically (tmp+rename) so a
+// crash mid-write can't truncate the index.
+let indexChain: Promise<unknown> = Promise.resolve();
 async function appendGlobalIndex(entry: SourceEntry): Promise<void> {
-  const list = await readGlobalIndex();
-  list.unshift(entry);
-  await fs.mkdir(OUTPUTS_ROOT, { recursive: true });
-  await fs.writeFile(GLOBAL_INDEX, JSON.stringify(list, null, 2), "utf8");
+  const run = async () => {
+    const list = await readGlobalIndex();
+    list.unshift(entry);
+    await fs.mkdir(OUTPUTS_ROOT, { recursive: true });
+    const tmp = `${GLOBAL_INDEX}.tmp`;
+    await fs.writeFile(tmp, JSON.stringify(list, null, 2), "utf8");
+    await fs.rename(tmp, GLOBAL_INDEX);
+  };
+  const next = indexChain.then(run, run);
+  indexChain = next.catch(() => {});
+  return next;
 }
 
 // ---- uploads ----

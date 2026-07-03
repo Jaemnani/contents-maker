@@ -2,7 +2,7 @@
 // Page source chooser: AI generate (image) | upload | pick from the shared pool.
 import { useState } from "react";
 import type { AdPage, AdProject, PageSource } from "@/lib/ad/schema";
-import { slotSource, slotPrompt, SLOT_SOURCE_FIELD, type SlotKey } from "@/lib/ad/schema";
+import { slotSource, slotPrompt, SLOT_SOURCE_FIELD, SLOT_PROMPT_FIELD, type SlotKey } from "@/lib/ad/schema";
 import type { AssetRef } from "@/lib/composition-types";
 import Select, { type SelectOption } from "@/components/ui/Select";
 import HistoryPicker from "@/components/HistoryPicker";
@@ -37,7 +37,6 @@ export default function SourceChooser({
   page,
   imageModels,
   onPatch,
-  onProject,
   onFlush,
   slot = "A",
 }: {
@@ -45,7 +44,6 @@ export default function SourceChooser({
   page: AdPage;
   imageModels: SelectOption[];
   onPatch: (patch: Partial<AdPage>) => void;
-  onProject: (p: AdProject) => void;
   onFlush?: () => Promise<void>;
   slot?: SlotKey; // which media slot (A/B/C/D) this chooser edits
 }) {
@@ -81,7 +79,18 @@ export default function SourceChooser({
     setErr("");
     try {
       await onFlush?.(); // persist in-flight edits before the server read-modify-write
-      onProject(await generatePageImage({ projectId: project.projectId, pageId: page.id, model, prompt, slot }));
+      const server = await generatePageImage({ projectId: project.projectId, pageId: page.id, model, prompt, slot });
+      // merge only this slot's fields — adopting the whole server snapshot would revert
+      // anything the user typed elsewhere while generation ran (10-60s)
+      const sp = server.pages.find((x) => x.id === page.id);
+      if (sp) {
+        const patch = {
+          [SLOT_SOURCE_FIELD[slot]]: sp[SLOT_SOURCE_FIELD[slot]],
+          [SLOT_PROMPT_FIELD[slot]]: sp[SLOT_PROMPT_FIELD[slot]],
+        } as Partial<AdPage>;
+        if (compareField) (patch as Record<string, unknown>)[compareField] = sp[compareField];
+        onPatch(patch);
+      }
     } catch (e) {
       setErr((e as Error).message);
     } finally {

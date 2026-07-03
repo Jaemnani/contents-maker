@@ -9,6 +9,7 @@ import { pickText } from "@/lib/render/strings";
 import TopicSuggest from "@/components/wizard/TopicSuggest";
 import type { TopicCandidate } from "@/lib/client/wizard";
 import AdEditor from "@/components/ad/AdEditor";
+import AutomationPanel from "@/components/ad/AutomationPanel";
 
 export default function Home() {
   const [project, setProject] = useState<AdProject | null>(null);
@@ -16,6 +17,7 @@ export default function Home() {
   const [topic, setTopic] = useState("");
   const [chosen, setChosen] = useState<TopicCandidate | null>(null);
   const [creating, setCreating] = useState(false);
+  const [createErr, setCreateErr] = useState("");
 
   useEffect(() => {
     if (!project) listAdProjects().then(setRecent).catch(() => setRecent([]));
@@ -23,6 +25,7 @@ export default function Home() {
 
   async function create(preset: "tapnow-9beat" | "empty") {
     setCreating(true);
+    setCreateErr("");
     try {
       setProject(
         await createAdProject({
@@ -31,6 +34,8 @@ export default function Home() {
           seedPrompt: chosen?.comparePrompt, // carry the suggested base image prompt into the project
         })
       );
+    } catch (e) {
+      setCreateErr(`프로젝트 생성 실패: ${(e as Error).message}`);
     } finally {
       setCreating(false);
     }
@@ -72,6 +77,8 @@ export default function Home() {
           </button>
         </div>
 
+        {createErr && <p className="mt-2 rounded-md bg-danger/10 px-3 py-2 text-xs text-danger">{createErr}</p>}
+
         <TopicSuggest
           language="ko"
           chosen={chosen}
@@ -81,6 +88,8 @@ export default function Home() {
           }}
         />
       </section>
+
+      <AutomationPanel recent={recent} />
 
       <section>
         <h2 className="mb-3 text-base font-bold">최근 광고 프로젝트</h2>

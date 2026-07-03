@@ -89,7 +89,16 @@ export async function curateTopics(terms: string[], language: Language, max = 6,
   } catch {
     return [];
   }
-  const arr = (parsed as { candidates?: unknown[] })?.candidates ?? (Array.isArray(parsed) ? parsed : []);
+  // LLMs sometimes return a single object (or numeric-keyed map) for "candidates" —
+  // degrade gracefully instead of throwing "not iterable" and 500-ing the request.
+  const rawCands = (parsed as { candidates?: unknown })?.candidates;
+  const arr: unknown[] = Array.isArray(rawCands)
+    ? rawCands
+    : Array.isArray(parsed)
+      ? (parsed as unknown[])
+      : rawCands && typeof rawCands === "object"
+        ? [rawCands]
+        : [];
   const out: TopicCandidate[] = [];
   for (const c of arr) {
     const r = Candidate.safeParse(normalize(c));

@@ -16,7 +16,7 @@ import {
   hasGeminiKey,
 } from "@/lib/env";
 import { geminiTts } from "@/lib/gemini/audio";
-import { readAdProject, writeAdProject, projectDirAbs } from "@/lib/ad/store";
+import { readAdProject, mutateAdProject, projectDirAbs } from "@/lib/ad/store";
 import type { AdProject } from "@/lib/ad/schema";
 
 // Flash = cheapest/fastest multilingual (incl. Korean). Swap for quality if needed:
@@ -94,7 +94,15 @@ export async function ttsPage(projectId: string, pageId: string): Promise<AdProj
   await fs.writeFile(absPath, buf);
   const durationSec = await mp3DurationSec(absPath);
 
-  // drop stale takes for this page
+  // DELTA write behind the project lock: the TTS call takes seconds — patch only this
+  // page's voAudio so concurrent saves/ops aren't clobbered (and can't clobber us).
+  const saved = await mutateAdProject(projectId, (fresh) => {
+    const target = fresh.pages.find((p) => p.id === pageId);
+    if (target) target.voAudio = { path: relPath, durationSec, hash };
+  });
+
+  // drop stale takes AFTER the project points at the new file (never delete what the
+  // persisted index.json still references)
   try {
     for (const f of await fs.readdir(audioDirAbs)) {
       if (f.startsWith(`page-${page.id}-`) && f !== fileName) await fs.unlink(path.join(audioDirAbs, f));
@@ -102,12 +110,5 @@ export async function ttsPage(projectId: string, pageId: string): Promise<AdProj
   } catch {
     /* best-effort cleanup */
   }
-
-  // DELTA write: the TTS call takes seconds — re-read and patch only this page's
-  // voAudio so concurrent saves (other captions, product edits …) aren't clobbered.
-  const fresh = await readAdProject(projectId);
-  const target = fresh.pages.find((p) => p.id === pageId);
-  if (!target) return fresh; // page deleted mid-call — keep the deletion, drop the audio
-  target.voAudio = { path: relPath, durationSec, hash };
-  return writeAdProject(fresh);
+  return saved;
 }

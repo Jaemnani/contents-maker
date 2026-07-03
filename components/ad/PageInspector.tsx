@@ -58,7 +58,6 @@ export default function PageInspector({
   page,
   imageModels,
   onPatch,
-  onProject,
   onProductName,
   onTts,
   ttsBusy,
@@ -68,7 +67,6 @@ export default function PageInspector({
   page: AdPage;
   imageModels: SelectOption[];
   onPatch: (patch: Partial<AdPage>) => void;
-  onProject: (p: AdProject) => void;
   onProductName: (name: string) => void;
   onTts?: (pageId: string) => void;
   ttsBusy?: boolean;
@@ -142,7 +140,7 @@ export default function PageInspector({
                     {slots.length > 1 && <span className="grid h-4 w-4 place-items-center rounded bg-empathy/15 text-[10px]">{i + 1}</span>}
                     {s.label}
                   </div>
-                  <SourceChooser project={project} page={page} imageModels={imageModels} onPatch={onPatch} onProject={onProject} onFlush={onFlush} slot={s.key} />
+                  <SourceChooser project={project} page={page} imageModels={imageModels} onPatch={onPatch} onFlush={onFlush} slot={s.key} />
                   {compareField && (
                     <input
                       value={(page[compareField] as string | undefined) ?? ""}

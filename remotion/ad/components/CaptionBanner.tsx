@@ -5,6 +5,7 @@ import React from "react";
 import { useCurrentFrame, useVideoConfig } from "remotion";
 import type { AdPage, AdProduct } from "@/lib/ad/schema";
 import { textCss, introAnim, backdropBox, backdropShadow } from "@/remotion/ad/lib/text";
+import { pageFrames } from "@/remotion/ad/lib/timeline";
 
 export const BRAND_FALLBACK = "#ff5a1f"; // TapNow-ish orange
 
@@ -21,7 +22,7 @@ export const CaptionBanner: React.FC<{
   const brand = product.brandColor || BRAND_FALLBACK;
   const backdrop = page.titleBackdrop ?? "banner";
   const pad = page.titlePadding ?? 28;
-  const { anim, filmOpacity } = introAnim(frame, fps, page.titleEffect ?? "fade", brand);
+  const { anim, filmOpacity } = introAnim(frame, fps, page.titleEffect ?? "fade", brand, pageFrames(page, fps));
   const base = textCss(page, { size: 56, weight: 800 });
   const box = backdropBox(backdrop, brand, pad);
   return (

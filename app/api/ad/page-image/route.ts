@@ -2,7 +2,7 @@
 // shared sources/ pool and set it as the page source (mirrors /api/post/stage-bg).
 import { z } from "zod";
 import { generateImageSources } from "@/lib/post/source-gen";
-import { readAdProject, writeAdProject } from "@/lib/ad/store";
+import { readAdProject, mutateAdProject } from "@/lib/ad/store";
 import { SLOT_SOURCE_FIELD, SLOT_PROMPT_FIELD } from "@/lib/ad/schema";
 import { FalError } from "@/lib/fal/client";
 import { WsError } from "@/lib/ws/client";
@@ -40,11 +40,11 @@ export async function POST(req: Request) {
     });
     const ref = refs[0];
     if (!ref) throw new Error(errors[0]?.error || "이미지 생성 실패");
-    // DELTA write: generation takes 10-60s — re-read and patch only this page's source
-    // so edits saved meanwhile aren't clobbered by a stale whole-project snapshot.
-    const fresh = await readAdProject(p.projectId);
-    const page = fresh.pages.find((x) => x.id === p.pageId);
-    if (page) {
+    // DELTA write behind the project lock: generation takes 10-60s — patch only this
+    // page's slot so edits saved meanwhile aren't clobbered by a stale snapshot.
+    const saved = await mutateAdProject(p.projectId, (fresh) => {
+      const page = fresh.pages.find((x) => x.id === p.pageId);
+      if (!page) return;
       const slot = p.slot ?? "A";
       page[SLOT_SOURCE_FIELD[slot]] = { kind: "asset", ref };
       page[SLOT_PROMPT_FIELD[slot]] = p.prompt;
@@ -53,8 +53,7 @@ export async function POST(req: Request) {
         if (slot === "A") page.compareLabelA = ref.label;
         else if (slot === "B") page.compareLabelB = ref.label;
       }
-    }
-    const saved = await writeAdProject(fresh);
+    });
     return Response.json({ project: saved, ref });
   } catch (e) {
     const status =

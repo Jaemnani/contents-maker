@@ -7,12 +7,13 @@ import { AbsoluteFill, Img, Sequence, Video } from "remotion";
 import type { PageSource } from "@/lib/ad/schema";
 import { assetUrl, pathUrl, COLORS } from "@/remotion/lib/util";
 import { COVER } from "@/remotion/lib/style";
+import { videoSourceKey } from "@/remotion/ad/lib/timeline";
 
 const VIDEO_EXT = /\.(mp4|webm|mov)$/i;
 
-/** Frames to trim from the START of a video source — lets consecutive same-source pages
- *  resume playback (set per-page by AdComposition via videoStartFrames). Default 0. */
-export const MediaStartContext = React.createContext(0);
+/** Resume info for the page's PRIMARY video: trim `frames` from the start, but only for
+ *  the source matching `key` — other slots (compare-2up B, grid C/D) must start at 0. */
+export const MediaStartContext = React.createContext<{ frames: number; key: string | null }>({ frames: 0, key: null });
 
 export function sourceUrl(source: PageSource, assetBase: string): { url: string; video: boolean } | null {
   if (source.kind === "asset") {
@@ -29,7 +30,9 @@ export function sourceUrl(source: PageSource, assetBase: string): { url: string;
 
 export const SourceLayer: React.FC<{ source: PageSource; assetBase: string }> = ({ source, assetBase }) => {
   const res = sourceUrl(source, assetBase);
-  const trimBefore = useContext(MediaStartContext);
+  const mediaStart = useContext(MediaStartContext);
+  // the resume offset belongs only to the source it was computed for
+  const trimBefore = mediaStart.key && videoSourceKey(source) === mediaStart.key ? mediaStart.frames : 0;
   if (!res) {
     return (
       <AbsoluteFill

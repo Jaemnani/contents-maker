@@ -6,7 +6,7 @@ import path from "path";
 import { FAL_QUEUE, falHeaders, falToError } from "@/lib/fal/client";
 import { getAdMusicModel, getAdMusicProvider, hasFalKey, hasGeminiKey } from "@/lib/env";
 import { geminiMusic } from "@/lib/gemini/audio";
-import { readAdProject, writeAdProject, projectDirAbs } from "@/lib/ad/store";
+import { readAdProject, mutateAdProject, projectDirAbs } from "@/lib/ad/store";
 import type { AdProject } from "@/lib/ad/schema";
 
 /** Rough video length in seconds (ignores transition overlaps — BGM loops anyway). */
@@ -44,7 +44,12 @@ async function attachBgm(projectId: string, buffer: Buffer, ext: string, tag: st
   const fileName = `bgm-gen-${tag}.${ext}`;
   await fs.mkdir(audioDirAbs, { recursive: true });
   await fs.writeFile(path.join(audioDirAbs, fileName), buffer);
-  // drop stale generated BGMs so they don't accumulate on disk
+  const relPath = path.posix.join("outputs", "results", projectId, "audio", fileName);
+  // repoint the project FIRST (behind the project lock), then clean up — never delete a
+  // file the persisted index.json still references
+  const saved = await mutateAdProject(projectId, (fresh) => {
+    fresh.audio = { ...fresh.audio, bgm: { kind: "upload", path: relPath } };
+  });
   try {
     for (const f of await fs.readdir(audioDirAbs)) {
       if (f.startsWith("bgm-gen-") && f !== fileName) await fs.unlink(path.join(audioDirAbs, f));
@@ -52,11 +57,7 @@ async function attachBgm(projectId: string, buffer: Buffer, ext: string, tag: st
   } catch {
     /* best-effort cleanup */
   }
-  const relPath = path.posix.join("outputs", "results", projectId, "audio", fileName);
-  // re-read so concurrent edits aren't clobbered
-  const fresh = await readAdProject(projectId);
-  fresh.audio = { ...fresh.audio, bgm: { kind: "upload", path: relPath } };
-  return writeAdProject(fresh);
+  return saved;
 }
 
 /** fal.ai async-queue text-to-music: submit → poll → download. */

@@ -6,6 +6,7 @@ import type { VisualProps } from "@/remotion/ad/types";
 import { SourceLayer } from "@/remotion/ad/components/SourceLayer";
 import { BRAND_FALLBACK } from "@/remotion/ad/components/CaptionBanner";
 import { textCss, introAnim, backdropBox, backdropShadow } from "@/remotion/ad/lib/text";
+import { pageFrames } from "@/remotion/ad/lib/timeline";
 
 export const Component: React.FC<VisualProps> = ({ page, product, assetBase }) => {
   const frame = useCurrentFrame();
@@ -28,7 +29,7 @@ export const Component: React.FC<VisualProps> = ({ page, product, assetBase }) =
         ? "linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(0,0,0,0.32) 50%, rgba(0,0,0,0) 70%)"
         : "linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 30%)";
 
-  const { anim, filmOpacity } = introAnim(frame, fps, page.titleEffect ?? "fade", brand);
+  const { anim, filmOpacity } = introAnim(frame, fps, page.titleEffect ?? "fade", brand, pageFrames(page, fps));
   const base = textCss(page, { size: 84, weight: 900 });
   const box = backdropBox(backdrop, brand, page.titlePadding ?? 34);
 

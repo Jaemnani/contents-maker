@@ -62,12 +62,12 @@ export function adTotalFrames(project: AdProject): number {
 }
 
 /** Stable identity for a VIDEO source (null for images / none / non-video). */
-function videoKey(page: AdPage): string | null {
-  const s = page.source;
+export function videoSourceKey(s: AdPage["source"]): string | null {
   if (s.kind === "asset" && s.ref.modality === "video") return `a:${s.ref.datasetPath}/${s.ref.file}`;
   if (s.kind === "upload" && /\.(mp4|webm|mov)$/i.test(s.path)) return `u:${s.path}`;
   return null;
 }
+const videoKey = (page: AdPage) => videoSourceKey(page.source);
 
 /**
  * Per-page video start offset (composition frames) so consecutive pages sharing the SAME
