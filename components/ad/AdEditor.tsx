@@ -9,6 +9,8 @@ import type { SelectOption } from "@/components/ui/Select";
 import PipelineBar from "@/components/ad/PipelineBar";
 import PageList, { ENDCARD_PAGE_ID } from "@/components/ad/PageList";
 import { snapProjectToBeat } from "@/lib/ad/beat";
+import { themePatch } from "@/lib/ad/themes";
+import ThemeBar from "@/components/ad/ThemeBar";
 import PageInspector from "@/components/ad/PageInspector";
 import PlayerPreview from "@/components/ad/PlayerPreview";
 import BgmPanel from "@/components/ad/BgmPanel";
@@ -290,6 +292,9 @@ export default function AdEditor({ project: initial, onExit }: { project: AdProj
       </header>
 
       <PipelineBar project={project} busy={busy} onCompose={runCompose} onTtsAll={runTtsAll} ttsProgress={ttsProgress} />
+
+      {/* one-click style themes — a single undoable patch over every page */}
+      <ThemeBar disabled={busy} onApply={(t) => patchProject(themePatch(projRef.current, t))} />
 
       {/* AI 대본 생성 입력 · 브랜드 · BGM — one line */}
       <section className="mb-3 grid items-start gap-4 lg:grid-cols-3">
