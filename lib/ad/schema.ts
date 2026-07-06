@@ -53,7 +53,9 @@ export const zAdPage = z.object({
   titleItalic: z.boolean().optional(), // italic
   titleLetterSpacing: z.number().optional(), // letter-spacing px (can be negative)
   titleColor: z.string().optional(), // text color hex (default white)
-  titleEffect: z.enum(["fade", "film", "blur", "rise", "pop", "slide", "neon", "stamp"]).optional(), // intro animation
+  titleEffect: z
+    .enum(["fade", "film", "blur", "rise", "pop", "slide", "neon", "stamp", "typewriter", "word-pop", "wave", "shake-text", "count-up"])
+    .optional(), // intro animation; last five render per-char/word via AnimatedText
   titleBackdrop: z.enum(["banner", "none", "outline", "panel", "glass", "highlight", "scrim"]).optional(), // legibility treatment
   titlePadding: z.number().nonnegative().optional(), // panel/glass inner padding px (default 34)
   compareLabelA: z.string().optional(), // compare-2up: title beside the A tag

@@ -17,6 +17,9 @@ export function textCss(page: AdPage, opts: { size: number; weight: number; colo
   };
 }
 
+/** Effects rendered per-char/word by AnimatedText — introAnim only block-fades these. */
+export const PER_CHAR_EFFECTS = new Set(["typewriter", "word-pop", "wave", "shake-text", "count-up"]);
+
 /**
  * Intro animation for the text block (+ a full-frame film overlay opacity for "film").
  * `durationInFrames` (when known) compresses the ramps on short pages so the text is
@@ -51,6 +54,13 @@ export function introAnim(
       const pulse = 0.5 + 0.5 * Math.sin(frame / 5);
       return { filmOpacity: 0, anim: { opacity: fIn(2, 10), filter: `drop-shadow(0 0 ${6 + pulse * 14}px ${brand}) drop-shadow(0 0 4px ${brand})` } };
     }
+    case "typewriter":
+    case "word-pop":
+    case "wave":
+    case "shake-text":
+    case "count-up":
+      // per-char/word motion lives in AnimatedText — block level just fades in fast
+      return { filmOpacity: 0, anim: { opacity: fIn(0, 4) } };
     default: // fade
       return { filmOpacity: 0, anim: { opacity: fIn(2, 12), transform: `translateY(${interpolate(spr, [0, 1], [-28, 0])}px)` } };
   }

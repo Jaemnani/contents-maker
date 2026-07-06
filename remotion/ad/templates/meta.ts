@@ -107,6 +107,39 @@ export const VISUAL_METAS: Record<string, TemplateMeta> = {
     compatibleSourceTypes: ["image", "video"],
     defaultDurationSec: 3,
   },
+  "before-after-slider": {
+    id: "before-after-slider",
+    category: "visual",
+    name: "비포/애프터 슬라이더",
+    describe:
+      "Before/after reveal: slot A (before) fills the frame, slot B (after) is revealed by a sweeping vertical divider — transformation page. Needs a second source; use sparingly.",
+    hint: "세로 슬라이더가 쓸고 지나가며 이전(A)→이후(B)를 공개. 소스 2개 필요.",
+    compatibleSourceTypes: ["image", "video"],
+    sourceSlots: [
+      { key: "A", label: "A (이전)" },
+      { key: "B", label: "B (이후)" },
+    ],
+    defaultDurationSec: 3,
+  },
+  "checklist-reveal": {
+    id: "checklist-reveal",
+    category: "visual",
+    name: "체크리스트 (순차 등장)",
+    describe:
+      "3-5 benefit bullets pop in one by one with brand checkmarks over dimmed media. caption MUST be newline-separated short bullets (3-5 lines).",
+    hint: "자막을 줄바꿈으로 나눠 쓰면 한 줄씩 ✓와 함께 등장. 혜택 나열 페이지.",
+    compatibleSourceTypes: ["image", "video"],
+    defaultDurationSec: 4,
+  },
+  "phone-mockup": {
+    id: "phone-mockup",
+    category: "visual",
+    name: "폰 목업",
+    describe: "Media inside a floating phone bezel (notch included) on a brand-tinted stage — 'in-app' product feel.",
+    hint: "폰 프레임 안에 미디어가 떠 있는 앱 시연 느낌.",
+    compatibleSourceTypes: ["image", "video"],
+    defaultDurationSec: 3,
+  },
 };
 
 /** Media slots a visual fills, with labels. Defaults to a single "메인 미디어" slot. */
@@ -179,6 +212,38 @@ export const MOTION_METAS: Record<string, TemplateMeta> = {
     hint: "살짝 기울었다 제자리로 돌아오며 등장.",
     compatibleSourceTypes: ["image", "video"],
   },
+  pulse: {
+    id: "pulse",
+    category: "motion",
+    name: "펄스 (박자 범프)",
+    describe: "Rhythmic subtle zoom bump (~120bpm feel) — music-video energy.",
+    hint: "박자에 맞춰 살짝살짝 커졌다 작아져요.",
+    compatibleSourceTypes: ["image", "video"],
+  },
+  shake: {
+    id: "shake",
+    category: "motion",
+    name: "흔들림 (임팩트)",
+    describe: "Strong impact shake decaying over the first half-second, then still.",
+    hint: "쿵! 하고 흔들리다 멈춰요. 강한 주장/훅에.",
+    compatibleSourceTypes: ["image", "video"],
+  },
+  "parallax-float": {
+    id: "parallax-float",
+    category: "motion",
+    name: "떠다니는 카메라",
+    describe: "Slow vertical drift with a faint horizontal sway — cinematic floating camera.",
+    hint: "천천히 떠오르며 은은하게 흔들리는 시네마틱 무빙.",
+    compatibleSourceTypes: ["image", "video"],
+  },
+  "whip-zoom-in": {
+    id: "whip-zoom-in",
+    category: "motion",
+    name: "휙 줌인 (훅)",
+    describe: "Snaps from 1.35x to rest in ~10 frames — attention hook, best on the FIRST page.",
+    hint: "확 당겨졌다 탁 멈추는 오프닝 훅. 첫 페이지 추천.",
+    compatibleSourceTypes: ["image", "video"],
+  },
 };
 
 export const TRANSITION_METAS: Record<string, TemplateMeta> = {
@@ -190,6 +255,12 @@ export const TRANSITION_METAS: Record<string, TemplateMeta> = {
   "clock-wipe": { id: "clock-wipe", category: "transition", name: "시계 와이프", describe: "Radial clock sweep reveal.", hint: "시계바늘처럼 원을 그리며 다음 페이지가 드러남.", durationFrames: 16 },
   "zoom-blur": { id: "zoom-blur", category: "transition", name: "확대 블러", describe: "Punchy zoom-blur burst (use before the endcard).", hint: "확 확대되며 흐려지는 강한 전환. 엔드카드 직전에 추천.", durationFrames: 14 },
   "dreamy-zoom": { id: "dreamy-zoom", category: "transition", name: "회전 확대", describe: "Dreamy rotating zoom blend.", hint: "살짝 회전하며 확대되는 몽환적 전환.", durationFrames: 18 },
+  "whip-pan": { id: "whip-pan", category: "transition", name: "휩팬 (휙 넘김)", describe: "Fast horizontal whip with a heavy blur burst — fast-beat staple.", hint: "휙! 옆으로 넘기며 블러가 터지는 빠른 전환.", durationFrames: 10 },
+  glitch: { id: "glitch", category: "transition", name: "글리치", describe: "Digital glitch: RGB-split ghosts + sliced jitter into the next page.", hint: "지지직 — 화면이 깨지며 다음 페이지로.", durationFrames: 12 },
+  push: { id: "push", category: "transition", name: "푸시 (밀어내기)", describe: "Outgoing scene scales down and dims while the next slides over it.", hint: "이전 화면이 뒤로 밀리고 다음이 덮으며 들어와요.", durationFrames: 12 },
+  iris: { id: "iris", category: "transition", name: "아이리스 (원형)", describe: "Circular reveal expanding from the center (SVG, no WebGL).", hint: "가운데에서 원이 커지며 다음 페이지 공개.", durationFrames: 14 },
+  "diagonal-wipe": { id: "diagonal-wipe", category: "transition", name: "대각선 와이프", describe: "Wipe sweeping from the top-left corner.", hint: "왼쪽 위에서 대각선으로 쓸어내며 전환.", durationFrames: 12 },
+  "spin-zoom": { id: "spin-zoom", category: "transition", name: "스핀 줌", describe: "Hard rotating zoom burst — much stronger than dreamy-zoom.", hint: "빙글 돌며 확 커지는 강한 전환.", durationFrames: 14 },
 };
 
 export const ENDCARD_METAS: Record<string, TemplateMeta> = {

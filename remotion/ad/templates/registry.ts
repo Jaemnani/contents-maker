@@ -28,6 +28,9 @@ import * as vCompare2up from "./visual/compare-2up";
 import * as vSplitMediaText from "./visual/split-media-text";
 import * as vQuoteCard from "./visual/quote-card";
 import * as vBigStat from "./visual/big-stat";
+import * as vBeforeAfter from "./visual/before-after-slider";
+import * as vChecklist from "./visual/checklist-reveal";
+import * as vPhoneMockup from "./visual/phone-mockup";
 import * as mNone from "./motion/none";
 import * as mKenBurns from "./motion/ken-burns-zoom";
 import * as mPan from "./motion/pan";
@@ -36,6 +39,10 @@ import * as mCaptionPop from "./motion/caption-pop";
 import * as mZoomOut from "./motion/zoom-out";
 import * as mDriftUp from "./motion/drift-up";
 import * as mRotateIn from "./motion/rotate-in";
+import * as mPulse from "./motion/pulse";
+import * as mShake from "./motion/shake";
+import * as mParallaxFloat from "./motion/parallax-float";
+import * as mWhipZoomIn from "./motion/whip-zoom-in";
 import * as tCut from "./transition/cut";
 import * as tFade from "./transition/fade";
 import * as tSlide from "./transition/slide";
@@ -44,6 +51,12 @@ import * as tFlip from "./transition/flip";
 import * as tClockWipe from "./transition/clock-wipe";
 import * as tZoomBlur from "./transition/zoom-blur";
 import * as tDreamyZoom from "./transition/dreamy-zoom";
+import * as tWhipPan from "./transition/whip-pan";
+import * as tGlitch from "./transition/glitch";
+import * as tPush from "./transition/push";
+import * as tIris from "./transition/iris";
+import * as tDiagonalWipe from "./transition/diagonal-wipe";
+import * as tSpinZoom from "./transition/spin-zoom";
 import * as eLogoBlurIn from "./endcard/logo-blur-in";
 import * as eLogoCta from "./endcard/logo-cta";
 
@@ -64,6 +77,9 @@ export const registry: {
     "split-media-text": { meta: VISUAL_METAS["split-media-text"], Component: vSplitMediaText.Component },
     "quote-card": { meta: VISUAL_METAS["quote-card"], Component: vQuoteCard.Component },
     "big-stat": { meta: VISUAL_METAS["big-stat"], Component: vBigStat.Component },
+    "before-after-slider": { meta: VISUAL_METAS["before-after-slider"], Component: vBeforeAfter.Component },
+    "checklist-reveal": { meta: VISUAL_METAS["checklist-reveal"], Component: vChecklist.Component },
+    "phone-mockup": { meta: VISUAL_METAS["phone-mockup"], Component: vPhoneMockup.Component },
   },
   motion: {
     none: { meta: MOTION_METAS["none"], Component: mNone.Component },
@@ -74,6 +90,10 @@ export const registry: {
     "zoom-out": { meta: MOTION_METAS["zoom-out"], Component: mZoomOut.Component },
     "drift-up": { meta: MOTION_METAS["drift-up"], Component: mDriftUp.Component },
     "rotate-in": { meta: MOTION_METAS["rotate-in"], Component: mRotateIn.Component },
+    pulse: { meta: MOTION_METAS["pulse"], Component: mPulse.Component },
+    shake: { meta: MOTION_METAS["shake"], Component: mShake.Component },
+    "parallax-float": { meta: MOTION_METAS["parallax-float"], Component: mParallaxFloat.Component },
+    "whip-zoom-in": { meta: MOTION_METAS["whip-zoom-in"], Component: mWhipZoomIn.Component },
   },
   transition: {
     cut: { meta: TRANSITION_METAS["cut"], make: tCut.make },
@@ -84,6 +104,12 @@ export const registry: {
     "clock-wipe": { meta: TRANSITION_METAS["clock-wipe"], make: tClockWipe.make },
     "zoom-blur": { meta: TRANSITION_METAS["zoom-blur"], make: tZoomBlur.make },
     "dreamy-zoom": { meta: TRANSITION_METAS["dreamy-zoom"], make: tDreamyZoom.make },
+    "whip-pan": { meta: TRANSITION_METAS["whip-pan"], make: tWhipPan.make },
+    glitch: { meta: TRANSITION_METAS["glitch"], make: tGlitch.make },
+    push: { meta: TRANSITION_METAS["push"], make: tPush.make },
+    iris: { meta: TRANSITION_METAS["iris"], make: tIris.make },
+    "diagonal-wipe": { meta: TRANSITION_METAS["diagonal-wipe"], make: tDiagonalWipe.make },
+    "spin-zoom": { meta: TRANSITION_METAS["spin-zoom"], make: tSpinZoom.make },
   },
   endcard: {
     "logo-blur-in": { meta: ENDCARD_METAS["logo-blur-in"], Component: eLogoBlurIn.Component },

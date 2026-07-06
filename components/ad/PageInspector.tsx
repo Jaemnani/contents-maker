@@ -42,6 +42,11 @@ const TITLE_EFFECTS: SelectOption[] = [
   { value: "pop", label: "팝 (탄성)" },
   { value: "stamp", label: "스탬프 (찍히듯)" },
   { value: "neon", label: "네온 글로우" },
+  { value: "typewriter", label: "타자기 (한 글자씩)" },
+  { value: "word-pop", label: "단어 팝 (단어별 등장)" },
+  { value: "wave", label: "물결 (글자 출렁임)" },
+  { value: "shake-text", label: "흔들림 (임팩트)" },
+  { value: "count-up", label: "숫자 카운트업" },
 ];
 const TITLE_BACKDROPS: SelectOption[] = [
   { value: "banner", label: "브랜드 배너 (알약)" },

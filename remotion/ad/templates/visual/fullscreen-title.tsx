@@ -7,6 +7,7 @@ import { SourceLayer } from "@/remotion/ad/components/SourceLayer";
 import { BRAND_FALLBACK } from "@/remotion/ad/components/CaptionBanner";
 import { textCss, introAnim, backdropBox, backdropShadow } from "@/remotion/ad/lib/text";
 import { pageFrames } from "@/remotion/ad/lib/timeline";
+import { AnimatedText } from "@/remotion/ad/components/AnimatedText";
 
 export const Component: React.FC<VisualProps> = ({ page, product, assetBase }) => {
   const frame = useCurrentFrame();
@@ -29,7 +30,8 @@ export const Component: React.FC<VisualProps> = ({ page, product, assetBase }) =
         ? "linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(0,0,0,0.32) 50%, rgba(0,0,0,0) 70%)"
         : "linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 30%)";
 
-  const { anim, filmOpacity } = introAnim(frame, fps, page.titleEffect ?? "fade", brand, pageFrames(page, fps));
+  const frames = pageFrames(page, fps);
+  const { anim, filmOpacity } = introAnim(frame, fps, page.titleEffect ?? "fade", brand, frames);
   const base = textCss(page, { size: 84, weight: 900 });
   const box = backdropBox(backdrop, brand, page.titlePadding ?? 34);
 
@@ -43,7 +45,7 @@ export const Component: React.FC<VisualProps> = ({ page, product, assetBase }) =
           {product.name}
         </div>
         <h1 style={{ ...base, margin: 0, lineHeight: 1.18, textAlign: "center", maxWidth: 940, whiteSpace: "pre-line", textShadow: backdropShadow(backdrop), ...box }}>
-          {page.caption}
+          <AnimatedText text={page.caption} page={page} frame={frame} fps={fps} durationInFrames={frames} brand={brand} />
         </h1>
       </div>
     </AbsoluteFill>

@@ -86,6 +86,37 @@ function VisualThumb({ id, brand }: { id: string; brand: string }) {
           </div>
         </>
       );
+    case "before-after-slider":
+      return (
+        <div style={{ position: "absolute", inset: 0 }}>
+          <Media />
+          <div style={{ position: "absolute", inset: 0, clipPath: "inset(0 45% 0 0)" }}><Media style={{ background: "linear-gradient(150deg,#3b5a4a,#13351f)" }} /></div>
+          <div style={{ position: "absolute", top: 0, bottom: 0, left: "55%", width: 2, background: "#fff" }} />
+          <div style={{ position: "absolute", top: "50%", left: "55%", transform: "translate(-50%,-50%)", width: 10, height: 10, borderRadius: "50%", background: "#fff" }} />
+        </div>
+      );
+    case "checklist-reveal":
+      return (
+        <><Media style={{ filter: "brightness(0.45)" }} />
+          <div style={{ position: "absolute", inset: "18% 14%", display: "flex", flexDirection: "column", justifyContent: "center", gap: 4 }}>
+            {[0, 1, 2].map((i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                <span style={{ width: 6, height: 6, borderRadius: 2, background: brand, color: "#fff", fontSize: 4, lineHeight: "6px", textAlign: "center" }}>✓</span>
+                <span style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.85)" }} />
+              </div>
+            ))}
+          </div>
+        </>
+      );
+    case "phone-mockup":
+      return (
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(160deg,#1b232e,#0a0e13)", display: "grid", placeItems: "center" }}>
+          <div style={{ position: "relative", width: "52%", height: "70%", borderRadius: 8, background: "#111826", padding: 2 }}>
+            <div style={{ position: "relative", width: "100%", height: "100%", borderRadius: 6, overflow: "hidden" }}><Media /></div>
+            <div style={{ position: "absolute", top: 3, left: "50%", transform: "translateX(-50%)", width: "36%", height: 3, borderRadius: 2, background: "#111826" }} />
+          </div>
+        </div>
+      );
     case "plain-caption":
     default:
       return (<><Media /><Bar pos="bottom" color={brand} h="13%" /></>);
@@ -103,6 +134,10 @@ function MotionThumb({ id }: { id: string }) {
   if (id === "zoom-out") return <div style={{ position: "absolute", inset: 0, animation: "tt-shrink 2s ease-in-out infinite" }}><Media /></div>;
   if (id === "drift-up") return <div style={{ position: "absolute", inset: "-12%", animation: "tt-drifty 2.2s ease-in-out infinite" }}><Media /></div>;
   if (id === "rotate-in") return <div style={{ position: "absolute", inset: "-6%", ...anim("tt-rotate", 1.8) }}><Media /></div>;
+  if (id === "pulse") return <div style={{ position: "absolute", inset: 0, animation: "tt-pulse 0.9s ease-in-out infinite" }}><Media /></div>;
+  if (id === "shake") return <div style={{ position: "absolute", inset: "-6%", animation: "tt-shake 0.5s linear infinite" }}><Media /></div>;
+  if (id === "parallax-float") return <div style={{ position: "absolute", inset: "-10%", animation: "tt-drifty 2.6s ease-in-out infinite" }}><Media /></div>;
+  if (id === "whip-zoom-in") return <div style={{ position: "absolute", inset: 0, animation: "tt-whipzoom 1.6s ease-out infinite" }}><Media /></div>;
   return <Media />;
 }
 
@@ -121,6 +156,18 @@ function TransitionThumb({ id, brand }: { id: string; brand: string }) {
     return (<><Half c="#2b3a4a" label="A" /><div style={{ position: "absolute", inset: 0, animation: "tt-flip 1.6s ease-in-out infinite", transformOrigin: "center" }}><Half c={brand} label="B" /></div></>);
   if (id === "clock-wipe")
     return (<><Half c="#2b3a4a" label="A" /><div style={{ position: "absolute", inset: 0, animation: "tt-fade 1.6s ease-in-out infinite alternate", clipPath: "polygon(50% 50%, 50% 0, 100% 0, 100% 100%, 50% 100%)" }}><Half c={brand} label="B" /></div></>);
+  if (id === "whip-pan")
+    return (<><Half c="#2b3a4a" label="A" /><div style={{ position: "absolute", inset: 0, animation: "tt-whip 0.9s ease-in-out infinite alternate" }}><Half c={brand} label="B" /></div></>);
+  if (id === "glitch")
+    return (<><Half c="#2b3a4a" label="A" /><div style={{ position: "absolute", inset: 0, animation: "tt-glitch 0.6s steps(3) infinite" }}><Half c={brand} label="B" /></div></>);
+  if (id === "push")
+    return (<><div style={{ position: "absolute", inset: 0, animation: "tt-pushback 1.4s ease-in-out infinite alternate" }}><Half c="#2b3a4a" label="A" /></div><div style={{ position: "absolute", inset: 0, animation: "tt-slide 1.4s ease-in-out infinite alternate" }}><Half c={brand} label="B" /></div></>);
+  if (id === "iris")
+    return (<><Half c="#2b3a4a" label="A" /><div style={{ position: "absolute", inset: 0, animation: "tt-iris 1.5s ease-in-out infinite alternate" }}><Half c={brand} label="B" /></div></>);
+  if (id === "diagonal-wipe")
+    return (<><Half c="#2b3a4a" label="A" /><div style={{ position: "absolute", inset: 0, animation: "tt-fade 1.4s steps(2) infinite alternate", clipPath: "polygon(0 0,100% 0,0 100%)" }}><Half c={brand} label="B" /></div></>);
+  if (id === "spin-zoom")
+    return (<div style={{ position: "absolute", inset: 0, animation: "tt-spinzoom 1.3s ease-in-out infinite alternate" }}><Half c={brand} label="B" /></div>);
   if (id === "zoom-blur")
     return (<div style={{ position: "absolute", inset: 0, animation: "tt-zoom 1.4s ease-in-out infinite", filter: "blur(.5px)" }}><Half c={brand} label="B" /></div>);
   if (id === "dreamy-zoom")
