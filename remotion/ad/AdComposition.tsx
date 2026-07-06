@@ -17,8 +17,10 @@ import {
   bgmVolumeAt,
   videoStartFrames,
   videoSourceKey,
+  adTotalFrames,
 } from "@/remotion/ad/lib/timeline";
 import { MediaStartContext } from "@/remotion/ad/components/SourceLayer";
+import { transitionWhoosh, pageDing, DEFAULT_SFX_VOLUME } from "@/remotion/ad/lib/sfx";
 
 function bgmSrc(project: AdProject, assetBase: string): string | null {
   const bgm = project.audio.bgm;
@@ -96,6 +98,33 @@ export const AdComposition: React.FC<AdProps> = ({ project, assetBase }) => {
           }
         />
       )}
+
+      {/* audio lane 3: SFX — transition whooshes + entrance dings (opt-in) */}
+      {project.audio.sfxEnabled &&
+        pages.map((p, i) => {
+          const sfxVol = project.audio.sfxVolume ?? DEFAULT_SFX_VOLUME;
+          const isLast = i === pages.length - 1;
+          const transId = isLast && project.endcard.enabled ? project.endcard.transitionTemplateId : p.transitionTemplateId;
+          const transFrames = transitionFramesAt(project, i);
+          // the overlap with the NEXT scene starts where that scene starts
+          const transStart = isLast ? adTotalFrames(project) - ecFrames : offsets[i + 1] ?? null;
+          const whoosh = transFrames > 0 && transStart != null && transitionWhoosh(transId);
+          const ding = pageDing(p);
+          return (
+            <Fragment key={`sfx-${p.id}`}>
+              {whoosh && (
+                <Sequence from={Math.max(0, transStart - 3)} durationInFrames={40}>
+                  <Audio src={staticFile("sfx/whoosh.wav")} volume={sfxVol} />
+                </Sequence>
+              )}
+              {ding && (
+                <Sequence from={offsets[i] + 2} durationInFrames={30}>
+                  <Audio src={staticFile("sfx/ding.wav")} volume={sfxVol} />
+                </Sequence>
+              )}
+            </Fragment>
+          );
+        })}
 
       <TransitionSeries>
         {pages.map((p, i) => {

@@ -14,11 +14,13 @@ export default function BgmPanel({
   onAudio,
   onProject,
   onFlush,
+  onSnap,
 }: {
   project: AdProject;
   onAudio: (audio: AdAudio) => void;
   onProject: (p: AdProject) => void;
   onFlush?: () => Promise<void>;
+  onSnap?: () => void; // snap page durations to audio.bpm (undoable, handled by AdEditor)
 }) {
   const [tab, setTab] = useState<"library" | "generate">("library");
   const [busy, setBusy] = useState(false);
@@ -145,6 +147,51 @@ export default function BgmPanel({
           </label>
         </div>
       )}
+
+      {/* SFX — transition whoosh + entrance ding */}
+      <div className="mt-3 flex items-center gap-3 border-t border-border pt-3">
+        <button
+          onClick={() => onAudio({ ...audio, sfxEnabled: !audio.sfxEnabled })}
+          className={`rounded-full px-3 py-1 text-xs font-semibold transition-all duration-200 ${audio.sfxEnabled ? "bg-eli5 text-white" : "bg-ink/10 text-muted"}`}
+        >
+          효과음 {audio.sfxEnabled ? "켬" : "끔"}
+        </button>
+        <span className="text-[11px] text-muted">전환 휙(whoosh) + 팝/스탬프 등장 딩(ding)</span>
+        {audio.sfxEnabled && (
+          <label className="ml-auto flex items-center gap-2 text-xs text-muted">
+            {Math.round((audio.sfxVolume ?? 0.7) * 100)}%
+            <input
+              type="range" min={0} max={1} step={0.05}
+              value={audio.sfxVolume ?? 0.7}
+              onChange={(e) => onAudio({ ...audio, sfxVolume: parseFloat(e.target.value) })}
+              className="w-24"
+            />
+          </label>
+        )}
+      </div>
+
+      {/* beat snap — align page cuts to the BGM tempo */}
+      <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
+        <span className="text-xs text-muted">BPM</span>
+        <input
+          type="number" min={40} max={220}
+          value={audio.bpm ?? ""}
+          placeholder="예: 120"
+          onChange={(e) => {
+            const v = parseInt(e.target.value, 10);
+            onAudio({ ...audio, bpm: Number.isFinite(v) && v > 0 ? v : undefined });
+          }}
+          className="w-24 rounded-md border border-border bg-surface px-2 py-1.5 text-sm outline-none focus:border-primary"
+        />
+        <button
+          onClick={onSnap}
+          disabled={!audio.bpm}
+          className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink transition-all duration-200 hover:border-empathy disabled:opacity-40"
+        >
+          박자 스냅
+        </button>
+        <span className="text-[10px] leading-tight text-muted">페이지 길이를 박자 배수로 올림(VO는 잘리지 않음) · ⌘Z 취소 가능</span>
+      </div>
     </section>
   );
 }

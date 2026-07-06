@@ -7,6 +7,7 @@ import type { AdPage, AdProduct } from "@/lib/ad/schema";
 import { textCss, introAnim, backdropBox, backdropShadow } from "@/remotion/ad/lib/text";
 import { pageFrames } from "@/remotion/ad/lib/timeline";
 import { AnimatedText } from "@/remotion/ad/components/AnimatedText";
+import { wordsForPage } from "@/lib/ad/captions";
 
 export const BRAND_FALLBACK = "#ff5a1f"; // TapNow-ish orange
 
@@ -19,7 +20,9 @@ export const CaptionBanner: React.FC<{
 }> = ({ text, product, page, bottom = 220 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  if (!text) return null;
+  // karaoke pages render VO words even when the static caption is empty
+  const karaoke = page.captionMode === "karaoke" && !!wordsForPage(page);
+  if (!text && !karaoke) return null;
   const brand = product.brandColor || BRAND_FALLBACK;
   const backdrop = page.titleBackdrop ?? "banner";
   const pad = page.titlePadding ?? 28;

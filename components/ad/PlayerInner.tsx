@@ -31,7 +31,7 @@ export default function PlayerInner({
       controls={controls}
       loop={loop}
       autoPlay={autoPlay}
-      numberOfSharedAudioTags={8}
+      numberOfSharedAudioTags={14}
       acknowledgeRemotionLicense
     />
   );

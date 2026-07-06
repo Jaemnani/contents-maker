@@ -8,6 +8,7 @@ import { useModels } from "@/hooks/useModels";
 import type { SelectOption } from "@/components/ui/Select";
 import PipelineBar from "@/components/ad/PipelineBar";
 import PageList, { ENDCARD_PAGE_ID } from "@/components/ad/PageList";
+import { snapProjectToBeat } from "@/lib/ad/beat";
 import PageInspector from "@/components/ad/PageInspector";
 import PlayerPreview from "@/components/ad/PlayerPreview";
 import BgmPanel from "@/components/ad/BgmPanel";
@@ -317,7 +318,16 @@ export default function AdEditor({ project: initial, onExit }: { project: AdProj
           </div>
         </div>
         <ProductPanel product={project.product} onProduct={(p) => patchProject({ product: p })} />
-        <BgmPanel project={project} onAudio={(audio) => patchProject({ audio })} onProject={(p) => mergeProjectFields(p, ["audio"])} onFlush={flushSave} />
+        <BgmPanel
+          project={project}
+          onAudio={(audio) => patchProject({ audio })}
+          onProject={(p) => mergeProjectFields(p, ["audio"])}
+          onFlush={flushSave}
+          onSnap={() => {
+            const pages = snapProjectToBeat(projRef.current);
+            if (pages) patchProject({ pages }); // one pushHistory → single undo step
+          }}
+        />
       </section>
 
       {errMsg && <p className="mb-3 rounded-md bg-danger/10 px-3 py-2 text-xs text-danger">{errMsg}</p>}

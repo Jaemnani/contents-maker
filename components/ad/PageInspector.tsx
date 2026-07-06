@@ -186,6 +186,24 @@ export default function PageInspector({
               </span>
             </div>
             <textarea value={page.caption} onChange={(e) => onPatch({ caption: e.target.value })} className="h-14 w-full resize-y rounded-md border border-border bg-surface p-2 text-base outline-none focus:border-primary" />
+            {/* caption mode: static text vs word-synced karaoke */}
+            <div className="mt-1.5 flex items-center gap-2">
+              <div className="flex gap-1">
+                {([["static", "정적 자막"], ["karaoke", "카라오케 (VO 싱크)"]] as const).map(([v, label]) => {
+                  const on = (page.captionMode ?? "static") === v;
+                  return (
+                    <button key={v} onClick={() => onPatch({ captionMode: v })} className={`rounded-md border px-2.5 py-1 text-[11px] transition-all duration-200 ${on ? "border-empathy bg-empathy/10 text-ink" : "border-border text-muted hover:border-empathy"}`}>
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+              {page.captionMode === "karaoke" && (
+                <span className="text-[10px] leading-tight text-muted">
+                  {page.voAudio ? (page.voAudio.words?.length ? "VO 단어가 음성에 맞춰 하이라이트됩니다." : "추정 싱크 — ‘VO 재생성’하면 정밀 싱크로 바뀝니다.") : "VO를 먼저 생성하세요 — 없으면 정적 자막으로 표시."}
+                </span>
+              )}
+            </div>
             {/* text style — applies to this page's on-screen text in every layout */}
             <div className="mt-1.5 flex flex-col gap-1.5 rounded-md border border-border bg-surface-muted/30 p-2">
               <div className="text-[11px] font-semibold text-muted">글자 스타일</div>

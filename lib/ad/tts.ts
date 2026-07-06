@@ -16,6 +16,7 @@ import {
   hasGeminiKey,
 } from "@/lib/env";
 import { geminiTts } from "@/lib/gemini/audio";
+import { estimateWords, type WordTiming } from "@/lib/ad/captions";
 import { readAdProject, mutateAdProject, projectDirAbs } from "@/lib/ad/store";
 import type { AdProject } from "@/lib/ad/schema";
 
@@ -36,9 +37,38 @@ function resolveTtsProvider(): { provider: "elevenlabs" | "gemini"; voice: strin
     : { provider: "elevenlabs", voice: getElevenLabsVoiceId(), ext: "mp3" };
 }
 
-async function elevenLabsTts(text: string, voiceId: string): Promise<Buffer> {
+interface ElevenAlignment {
+  characters: string[];
+  character_start_times_seconds: number[];
+  character_end_times_seconds: number[];
+}
+
+/** Aggregate ElevenLabs character alignment into word timings (split on whitespace). */
+function alignmentToWords(a: ElevenAlignment | undefined): WordTiming[] | undefined {
+  if (!a?.characters?.length) return undefined;
+  const out: WordTiming[] = [];
+  let word = "";
+  let start = 0;
+  let end = 0;
+  for (let i = 0; i < a.characters.length; i++) {
+    const ch = a.characters[i];
+    if (/\s/.test(ch)) {
+      if (word) out.push({ w: word, s: start, e: end });
+      word = "";
+      continue;
+    }
+    if (!word) start = a.character_start_times_seconds[i] ?? end;
+    word += ch;
+    end = a.character_end_times_seconds[i] ?? end;
+  }
+  if (word) out.push({ w: word, s: start, e: end });
+  return out.length ? out : undefined;
+}
+
+/** ElevenLabs TTS via /with-timestamps — returns audio + word-level timing for karaoke. */
+async function elevenLabsTts(text: string, voiceId: string): Promise<{ buf: Buffer; words?: WordTiming[] }> {
   const res = await fetch(
-    `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=${OUTPUT_FORMAT}`,
+    `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/with-timestamps?output_format=${OUTPUT_FORMAT}`,
     {
       method: "POST",
       headers: { "xi-api-key": getElevenLabsKey(), "Content-Type": "application/json" },
@@ -49,7 +79,9 @@ async function elevenLabsTts(text: string, voiceId: string): Promise<Buffer> {
     const detail = await res.text().catch(() => "");
     throw new Error(`ElevenLabs ${res.status}: ${detail.slice(0, 300)}`);
   }
-  return Buffer.from(await res.arrayBuffer());
+  const json = (await res.json()) as { audio_base64?: string; alignment?: ElevenAlignment; normalized_alignment?: ElevenAlignment };
+  if (!json.audio_base64) throw new Error("ElevenLabs: 오디오 응답이 비어 있습니다.");
+  return { buf: Buffer.from(json.audio_base64, "base64"), words: alignmentToWords(json.alignment ?? json.normalized_alignment) };
 }
 
 export async function mp3DurationSec(absPath: string): Promise<number> {
@@ -89,16 +121,24 @@ export async function ttsPage(projectId: string, pageId: string): Promise<AdProj
     }
   }
 
-  const buf = provider === "gemini" ? await geminiTts(text, voice) : await elevenLabsTts(text, voice);
+  let buf: Buffer;
+  let words: WordTiming[] | undefined;
+  if (provider === "gemini") {
+    buf = await geminiTts(text, voice);
+  } else {
+    ({ buf, words } = await elevenLabsTts(text, voice));
+  }
   await fs.mkdir(audioDirAbs, { recursive: true });
   await fs.writeFile(absPath, buf);
   const durationSec = await mp3DurationSec(absPath);
+  // no provider alignment (Gemini / older responses) → estimate proportionally
+  if (!words?.length) words = estimateWords(text, durationSec);
 
   // DELTA write behind the project lock: the TTS call takes seconds — patch only this
   // page's voAudio so concurrent saves/ops aren't clobbered (and can't clobber us).
   const saved = await mutateAdProject(projectId, (fresh) => {
     const target = fresh.pages.find((p) => p.id === pageId);
-    if (target) target.voAudio = { path: relPath, durationSec, hash };
+    if (target) target.voAudio = { path: relPath, durationSec, hash, words: words?.length ? words : undefined };
   });
 
   // drop stale takes AFTER the project points at the new file (never delete what the

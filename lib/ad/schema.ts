@@ -31,6 +31,9 @@ export const zVoAudio = z.object({
   path: z.string(), // outputs/-relative mp3
   durationSec: z.number().positive(),
   hash: z.string(), // sha256(voiceId + "\n" + vo) first 8 hex — regen skip / stale cleanup
+  // per-word timing (seconds) — precise from ElevenLabs /with-timestamps, estimated for
+  // Gemini. Missing on audio generated before this feature (karaoke falls back to estimate).
+  words: z.array(z.object({ w: z.string(), s: z.number(), e: z.number() })).optional(),
 });
 export type VoAudio = z.infer<typeof zVoAudio>;
 
@@ -45,6 +48,7 @@ export const zAdPage = z.object({
   motionTemplateId: z.string(),
   transitionTemplateId: z.string(), // transition from THIS page to the next (or endcard)
   caption: z.string(), // on-screen subtitle (ko, v1 single-language)
+  captionMode: z.enum(["static", "karaoke"]).optional(), // karaoke = VO words highlighted in sync (default static)
   titlePosition: z.enum(["top", "middle", "bottom"]).optional(), // title-capable visuals (default "top")
   // ── on-screen text style — applies to this page's caption/title in EVERY layout ──
   titleFont: z.string().optional(), // font key (default "Pretendard"); see remotion/ad/lib/fonts.ts
@@ -92,6 +96,9 @@ export const zAdAudio = z.object({
   bgm: zBgmSource,
   baseVolume: z.number().min(0).max(1).optional(), // default 0.6
   duckVolume: z.number().min(0).max(1).optional(), // default 0.25 (under VO)
+  sfxEnabled: z.boolean().optional(), // transition whoosh + entrance ding (default false)
+  sfxVolume: z.number().min(0).max(1).optional(), // default 0.7
+  bpm: z.number().positive().optional(), // BGM tempo — used by "박자 스냅" (beat.ts)
 });
 export type AdAudio = z.infer<typeof zAdAudio>;
 

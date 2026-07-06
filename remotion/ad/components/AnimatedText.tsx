@@ -6,6 +6,7 @@ import React from "react";
 import { interpolate, spring } from "remotion";
 import type { AdPage } from "@/lib/ad/schema";
 import { PER_CHAR_EFFECTS } from "@/remotion/ad/lib/text";
+import { wordsForPage, chunkWords } from "@/lib/ad/captions";
 
 /** deterministic pseudo-random in [-1, 1] from integer seeds */
 function jitter(a: number, b: number): number {
@@ -21,6 +22,41 @@ export const AnimatedText: React.FC<{
   durationInFrames: number;
   brand: string;
 }> = ({ text, page, frame, fps, durationInFrames, brand }) => {
+  // ── karaoke: render VO words highlighted in sync (replaces the static caption) ──
+  if (page.captionMode === "karaoke") {
+    const words = wordsForPage(page);
+    if (words?.length) {
+      const t = frame / fps;
+      const chunks = chunkWords(words, 4);
+      const active = chunks.find((c) => t < c[c.length - 1].e) ?? chunks[chunks.length - 1];
+      return (
+        <>
+          {active.map((wd, i) => {
+            const started = t >= wd.s;
+            const current = started && t < wd.e;
+            // quick pop as each word becomes current (frame-deterministic, no CSS transitions)
+            const pop = current ? interpolate(t, [wd.s, wd.s + 0.12], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }) : 0;
+            return (
+              <span
+                key={`${wd.s}-${i}`}
+                style={{
+                  display: "inline-block",
+                  whiteSpace: "pre",
+                  transform: `scale(${1 + 0.14 * pop})`,
+                  color: current ? brand : undefined,
+                  opacity: started ? 1 : 0.55,
+                }}
+              >
+                {wd.w + (i < active.length - 1 ? " " : "")}
+              </span>
+            );
+          })}
+        </>
+      );
+    }
+    // no VO/timings → fall through to the static caption (never crash the render)
+  }
+
   const effect = page.titleEffect ?? "fade";
   if (!PER_CHAR_EFFECTS.has(effect)) return <>{text}</>;
 
