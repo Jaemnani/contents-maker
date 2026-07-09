@@ -22,7 +22,9 @@ export const Component: React.FC<VisualProps> = ({ page, product, assetBase }) =
         <div style={{ ...textCss(page, { size: 200, weight: 900, color: brand }), textAlign: "center", whiteSpace: "pre-line", lineHeight: 1, textShadow: backdropShadow("none"), ...anim }}>
           {page.caption}
         </div>
-        <div style={{ color: "rgba(255,255,255,0.85)", fontFamily: "Pretendard", fontWeight: 700, fontSize: 40, textAlign: "center" }}>{product.name}</div>
+        {product.showName !== false && (
+          <div style={{ color: "rgba(255,255,255,0.85)", fontFamily: "Pretendard", fontWeight: 700, fontSize: 40, textAlign: "center" }}>{product.name}</div>
+        )}
       </AbsoluteFill>
       )}
     </AbsoluteFill>

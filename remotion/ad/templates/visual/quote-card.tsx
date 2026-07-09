@@ -24,7 +24,9 @@ export const Component: React.FC<VisualProps> = ({ page, product, assetBase }) =
           <div style={{ ...textCss(page, { size: 70, weight: 800 }), textAlign: "center", whiteSpace: "pre-line", lineHeight: 1.3, textShadow: backdropShadow("none") }}>
             {page.caption}
           </div>
-          <div style={{ marginTop: 26, color: "rgba(255,255,255,0.72)", fontFamily: "Pretendard", fontWeight: 600, fontSize: 30 }}>— {product.name}</div>
+          {product.showName !== false && (
+            <div style={{ marginTop: 26, color: "rgba(255,255,255,0.72)", fontFamily: "Pretendard", fontWeight: 600, fontSize: 30 }}>— {product.name}</div>
+          )}
         </div>
       </AbsoluteFill>
       )}

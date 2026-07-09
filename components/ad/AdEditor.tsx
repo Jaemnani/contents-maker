@@ -381,7 +381,7 @@ export default function AdEditor({ project: initial, onExit }: { project: AdProj
                 page={selected}
                 imageModels={imageModels}
                 onPatch={(patch) => patchPage(selected.id, patch)}
-                onProductName={(name) => patchProject({ product: { ...projRef.current.product, name } })}
+                onProductPatch={(patch) => patchProject({ product: { ...projRef.current.product, ...patch } })}
                 onTts={runTts}
                 ttsBusy={ttsBusyId === selected.id || busy}
                 onFlush={flushSave}

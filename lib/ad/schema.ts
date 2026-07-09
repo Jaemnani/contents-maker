@@ -114,6 +114,7 @@ export const zAdProduct = z.object({
   cta: z.string(),
   brandColor: z.string().optional(), // hex, used by visual templates
   logoPath: z.string().optional(), // outputs/-relative brand logo (endcard); falls back to public/brand/logo.png
+  showName: z.boolean().optional(), // show the product name on screen (badge/attribution/label; default true)
 });
 export type AdProduct = z.infer<typeof zAdProduct>;
 

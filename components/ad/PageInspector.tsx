@@ -1,7 +1,7 @@
 "use client";
 // Per-page inspector: source type/source, the 3 template dropdowns (catalog-driven,
 // filtered by compatibleSourceTypes), caption/VO text, duration override + warnings.
-import type { AdPage, AdProject } from "@/lib/ad/schema";
+import type { AdPage, AdProduct, AdProject } from "@/lib/ad/schema";
 import Select, { type SelectOption } from "@/components/ui/Select";
 import type { TemplateMeta } from "@/remotion/ad/types";
 import SourceChooser from "@/components/ad/SourceChooser";
@@ -63,7 +63,7 @@ export default function PageInspector({
   page,
   imageModels,
   onPatch,
-  onProductName,
+  onProductPatch,
   onTts,
   ttsBusy,
   onFlush,
@@ -72,7 +72,7 @@ export default function PageInspector({
   page: AdPage;
   imageModels: SelectOption[];
   onPatch: (patch: Partial<AdPage>) => void;
-  onProductName: (name: string) => void;
+  onProductPatch: (patch: Partial<AdProduct>) => void;
   onTts?: (pageId: string) => void;
   ttsBusy?: boolean;
   onFlush?: () => Promise<void>;
@@ -115,10 +115,19 @@ export default function PageInspector({
       <div className="flex flex-col gap-4">
         {/* product name — global, but edited here (shows in the '제목 강조' layout badge) */}
         <section>
-          <div className="mb-1 text-xs font-semibold text-muted">제품명 <span className="font-normal">(전체 공통 · ‘제목 강조’ 레이아웃 배지)</span></div>
+          <div className="mb-1 flex items-center gap-2 text-xs font-semibold text-muted">
+            제품명 <span className="font-normal">(전체 공통 · 배지/출처/라벨)</span>
+            <button
+              onClick={() => onProductPatch({ showName: project.product.showName === false ? undefined : false })}
+              title={project.product.showName === false ? "화면에 표시하기" : "화면에서 숨기기"}
+              className={`rounded-full px-2 py-0.5 text-[10px] font-semibold transition-all duration-200 ${project.product.showName === false ? "bg-ink/10 text-muted" : "bg-eli5 text-white"}`}
+            >
+              {project.product.showName === false ? "숨김" : "표시"}
+            </button>
+          </div>
           <input
             value={project.product.name}
-            onChange={(e) => onProductName(e.target.value)}
+            onChange={(e) => onProductPatch({ name: e.target.value })}
             placeholder="예: TapNow"
             className="w-full rounded-md border border-border bg-surface px-3 py-1.5 text-base outline-none focus:border-primary"
           />
