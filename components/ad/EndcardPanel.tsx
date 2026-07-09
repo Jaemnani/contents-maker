@@ -15,10 +15,14 @@ export default function EndcardPanel({
   project,
   onEndcard,
   onProduct,
+  onTts,
+  ttsBusy,
 }: {
   project: AdProject;
   onEndcard: (e: AdEndcard) => void;
   onProduct: (p: AdProduct) => void;
+  onTts?: () => void; // generate/regenerate the endcard VO
+  ttsBusy?: boolean;
 }) {
   const ec = project.endcard;
   const product = project.product;
@@ -114,6 +118,37 @@ export default function EndcardPanel({
             />
             <span className="shrink-0 text-xs text-muted">초</span>
           </div>
+          {/* endcard narration — spoken over the closing card (e.g. the final push line) */}
+          <div>
+            <div className="mb-1 flex items-center justify-between text-xs text-muted">
+              <span>내레이션 (VO)</span>
+              {onTts && (
+                <button
+                  onClick={onTts}
+                  disabled={ttsBusy || !(ec.vo ?? "").trim()}
+                  className="rounded border border-border px-2 py-0.5 text-[11px] text-ink transition-all duration-200 hover:border-empathy disabled:opacity-40"
+                >
+                  {ttsBusy ? "생성 중…" : ec.voAudio ? "VO 재생성" : "VO 생성"}
+                </button>
+              )}
+            </div>
+            <textarea
+              value={ec.vo ?? ""}
+              onChange={(e) => onEndcard({ ...ec, vo: e.target.value || undefined })}
+              placeholder="예: 그래서 하나만 믿지 말고 비교해봐"
+              className="h-14 w-full resize-y rounded-md border border-border bg-surface p-2 text-base outline-none focus:border-primary"
+            />
+            {ec.voAudio && (
+              <div className="mt-1.5 flex items-center gap-2">
+                <audio controls src={fileUrl(ec.voAudio.path)} className="h-8 w-full" />
+                <span className="shrink-0 text-[11px] text-muted">{ec.voAudio.durationSec.toFixed(1)}s</span>
+              </div>
+            )}
+            {ec.voAudio && ec.voAudio.durationSec > (ec.durationSec ?? 3) && (
+              <p className="mt-1 text-[11px] text-warning">VO가 설정 길이보다 길어 엔드카드가 자동으로 늘어납니다.</p>
+            )}
+          </div>
+
           {/* the editable text follows the chosen template: logo-cta → CTA, logo-blur-in → one-liner */}
           {ec.templateId === "logo-cta" ? (
             <div>

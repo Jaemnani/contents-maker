@@ -89,6 +89,14 @@ export const AdComposition: React.FC<AdProps> = ({ project, assetBase }) => {
           </Sequence>
         ) : null
       )}
+      {project.endcard.enabled && project.endcard.voAudio && (
+        <Sequence
+          from={adTotalFrames(project) - ecFrames}
+          durationInFrames={Math.ceil((project.endcard.voAudio.durationSec / voSpeed) * fps)}
+        >
+          <Audio src={pathUrl(assetBase, project.endcard.voAudio.path)} playbackRate={voSpeed} />
+        </Sequence>
+      )}
       {/* audio lane 2: BGM — looped, ducked under VO. loopVolumeCurveBehavior="extend"
           keeps the volume callback on ABSOLUTE frames (default "repeat" restarts the
           curve every loop iteration → ducking would misalign once the track loops). */}

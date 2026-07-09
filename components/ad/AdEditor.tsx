@@ -3,7 +3,7 @@
 // Layout: page list | inspector | live Player preview.
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { AdPage, AdProject } from "@/lib/ad/schema";
-import { saveAdProject, composeAd, ttsAdPage } from "@/lib/client/ad";
+import { saveAdProject, composeAd, ttsAdPage, ttsAdEndcard } from "@/lib/client/ad";
 import { useModels } from "@/hooks/useModels";
 import type { SelectOption } from "@/components/ui/Select";
 import PipelineBar from "@/components/ad/PipelineBar";
@@ -242,12 +242,27 @@ export default function AdEditor({ project: initial, onExit }: { project: AdProj
     }
   }
 
-  async function runTtsAll() {
-    const ids = projRef.current.pages.filter((p) => p.vo.trim()).map((p) => p.id);
-    if (!ids.length) return;
+  async function runEndcardTts() {
     setBusy(true);
     setErrMsg("");
-    setTtsProgress({ done: 0, total: ids.length });
+    try {
+      await flushSave(); // TTS must narrate the endcard text as currently typed
+      mergeProjectFields(await ttsAdEndcard(projRef.current.projectId), ["endcard"]);
+    } catch (e) {
+      setErrMsg((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function runTtsAll() {
+    const ids = projRef.current.pages.filter((p) => p.vo.trim()).map((p) => p.id);
+    const withEndcard = projRef.current.endcard.enabled && !!projRef.current.endcard.vo?.trim();
+    const total = ids.length + (withEndcard ? 1 : 0);
+    if (!total) return;
+    setBusy(true);
+    setErrMsg("");
+    setTtsProgress({ done: 0, total });
     try {
       await flushSave();
       for (let i = 0; i < ids.length; i++) {
@@ -256,7 +271,11 @@ export default function AdEditor({ project: initial, onExit }: { project: AdProj
         if (page && page.vo.trim()) {
           mergePageFields(await ttsAdPage(projRef.current.projectId, ids[i]), ids[i], ["voAudio"]);
         }
-        setTtsProgress({ done: i + 1, total: ids.length });
+        setTtsProgress({ done: i + 1, total });
+      }
+      if (withEndcard) {
+        mergeProjectFields(await ttsAdEndcard(projRef.current.projectId), ["endcard"]);
+        setTtsProgress({ done: total, total });
       }
     } catch (e) {
       setErrMsg((e as Error).message);
@@ -351,7 +370,7 @@ export default function AdEditor({ project: initial, onExit }: { project: AdProj
         </aside>
 
         {selectedId === ENDCARD_PAGE_ID ? (
-          <EndcardPanel project={project} onEndcard={(endcard) => patchProject({ endcard })} onProduct={(p) => patchProject({ product: p })} />
+          <EndcardPanel project={project} onEndcard={(endcard) => patchProject({ endcard })} onProduct={(p) => patchProject({ product: p })} onTts={runEndcardTts} ttsBusy={busy} />
         ) : (
           <section className="rounded-lg border border-border bg-surface p-4">
             <h2 className="mb-3 text-sm font-bold">페이지 편집</h2>

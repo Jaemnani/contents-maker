@@ -192,6 +192,8 @@ async function cloneTemplate(template: AdProject, topic: string, seedPrompt?: st
   }
   let audio = { ...template.audio };
   if (audio.bgm.kind === "upload") audio = { ...audio, bgm: { kind: "upload", path: await adoptFile(audio.bgm.path) } };
+  let endcard = { ...template.endcard };
+  if (endcard.voAudio) endcard = { ...endcard, voAudio: { ...endcard.voAudio, path: await adoptFile(endcard.voAudio.path) } };
 
   return {
     ...template,
@@ -204,6 +206,7 @@ async function cloneTemplate(template: AdProject, topic: string, seedPrompt?: st
     product: { ...template.product, oneLiner: "", valueProps: [] },
     pages,
     audio,
+    endcard,
     latestRender: null,
     renderHistory: [],
   };

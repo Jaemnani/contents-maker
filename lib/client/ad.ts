@@ -109,6 +109,18 @@ export async function ttsAdPage(projectId: string, pageId: string): Promise<AdPr
   return d.project;
 }
 
+/** Generate (or regenerate) the ENDCARD's VO via TTS. */
+export async function ttsAdEndcard(projectId: string): Promise<AdProject> {
+  const d = await jsonOrThrow(
+    await fetch("/api/ad/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ projectId, endcard: true }),
+    })
+  );
+  return d.project;
+}
+
 /** Generate background music (fal text-to-music) and attach it. Returns the updated project. */
 export async function generateAdBgm(projectId: string, prompt: string): Promise<AdProject> {
   const d = await jsonOrThrow(

@@ -97,31 +97,39 @@ export async function mp3DurationSec(absPath: string): Promise<number> {
   return Math.round(slowDurationInSeconds * 1000) / 1000;
 }
 
-/**
- * Generate (or reuse) the VO for one page. Idempotent: unchanged voiceId+text → no-op.
- * Stale `page-<id>-*.mp3` siblings are removed after a successful regen.
- */
-export async function ttsPage(projectId: string, pageId: string): Promise<AdProject> {
-  const snapshot = await readAdProject(projectId);
-  const page = snapshot.pages.find((p) => p.id === pageId);
-  if (!page) throw new Error("페이지를 찾을 수 없습니다.");
-  const text = page.vo.trim();
-  if (!text) throw new Error("VO 텍스트가 비어 있습니다.");
+interface SynthResult {
+  relPath: string;
+  durationSec: number;
+  hash: string;
+  words?: WordTiming[];
+  fileName: string;
+  unchanged: boolean;
+}
 
-  const pref = snapshot.audio.ttsProvider;
+/**
+ * Synthesize one VO clip (provider auto-select + quota fallback). Idempotent: when
+ * `existingHash` matches and the file is present, nothing is generated.
+ */
+async function synthesizeVo(
+  projectId: string,
+  text: string,
+  filePrefix: string,
+  pref: "auto" | "elevenlabs" | "gemini" | undefined,
+  existingHash?: string
+): Promise<SynthResult> {
   let sel = resolveTtsProvider(pref);
   const audioDirAbs = path.join(projectDirAbs(projectId), "audio");
   const pathsFor = (s: typeof sel) => {
     const hash = voHash(`${s.provider}:${s.voice}`, text);
-    const fileName = `page-${page.id}-${hash}.${s.ext}`;
+    const fileName = `${filePrefix}-${hash}.${s.ext}`;
     return { hash, fileName, absPath: path.join(audioDirAbs, fileName), relPath: path.posix.join("outputs", "results", projectId, "audio", fileName) };
   };
   let { hash, fileName, absPath, relPath } = pathsFor(sel);
 
-  if (page.voAudio?.hash === hash) {
+  if (existingHash === hash) {
     try {
       await fs.access(absPath);
-      return snapshot; // unchanged + file present → no-op
+      return { relPath, durationSec: 0, hash, fileName, unchanged: true };
     } catch {
       /* file missing → regenerate below */
     }
@@ -150,22 +158,54 @@ export async function ttsPage(projectId: string, pageId: string): Promise<AdProj
   const durationSec = await mp3DurationSec(absPath);
   // no provider alignment (Gemini / older responses) → estimate proportionally
   if (!words?.length) words = estimateWords(text, durationSec);
+  return { relPath, durationSec, hash, words: words?.length ? words : undefined, fileName, unchanged: false };
+}
+
+/** Remove stale takes AFTER the project points at the new file. */
+async function cleanupStaleTakes(projectId: string, filePrefix: string, keep: string): Promise<void> {
+  const audioDirAbs = path.join(projectDirAbs(projectId), "audio");
+  try {
+    for (const f of await fs.readdir(audioDirAbs)) {
+      if (f.startsWith(`${filePrefix}-`) && f !== keep) await fs.unlink(path.join(audioDirAbs, f));
+    }
+  } catch {
+    /* best-effort cleanup */
+  }
+}
+
+/** Generate (or reuse) the VO for one page. Idempotent per provider:voice+text hash. */
+export async function ttsPage(projectId: string, pageId: string): Promise<AdProject> {
+  const snapshot = await readAdProject(projectId);
+  const page = snapshot.pages.find((p) => p.id === pageId);
+  if (!page) throw new Error("페이지를 찾을 수 없습니다.");
+  const text = page.vo.trim();
+  if (!text) throw new Error("VO 텍스트가 비어 있습니다.");
+
+  const r = await synthesizeVo(projectId, text, `page-${page.id}`, snapshot.audio.ttsProvider, page.voAudio?.hash);
+  if (r.unchanged) return snapshot;
 
   // DELTA write behind the project lock: the TTS call takes seconds — patch only this
   // page's voAudio so concurrent saves/ops aren't clobbered (and can't clobber us).
   const saved = await mutateAdProject(projectId, (fresh) => {
     const target = fresh.pages.find((p) => p.id === pageId);
-    if (target) target.voAudio = { path: relPath, durationSec, hash, words: words?.length ? words : undefined };
+    if (target) target.voAudio = { path: r.relPath, durationSec: r.durationSec, hash: r.hash, words: r.words };
   });
+  await cleanupStaleTakes(projectId, `page-${page.id}`, r.fileName);
+  return saved;
+}
 
-  // drop stale takes AFTER the project points at the new file (never delete what the
-  // persisted index.json still references)
-  try {
-    for (const f of await fs.readdir(audioDirAbs)) {
-      if (f.startsWith(`page-${page.id}-`) && f !== fileName) await fs.unlink(path.join(audioDirAbs, f));
-    }
-  } catch {
-    /* best-effort cleanup */
-  }
+/** Generate (or reuse) the ENDCARD's VO (endcard.vo → endcard.voAudio). */
+export async function ttsEndcard(projectId: string): Promise<AdProject> {
+  const snapshot = await readAdProject(projectId);
+  const text = (snapshot.endcard.vo ?? "").trim();
+  if (!text) throw new Error("엔드카드 VO 텍스트가 비어 있습니다.");
+
+  const r = await synthesizeVo(projectId, text, "endcard", snapshot.audio.ttsProvider, snapshot.endcard.voAudio?.hash);
+  if (r.unchanged) return snapshot;
+
+  const saved = await mutateAdProject(projectId, (fresh) => {
+    fresh.endcard.voAudio = { path: r.relPath, durationSec: r.durationSec, hash: r.hash, words: r.words };
+  });
+  await cleanupStaleTakes(projectId, "endcard", r.fileName);
   return saved;
 }

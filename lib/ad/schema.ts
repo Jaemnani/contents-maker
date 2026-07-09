@@ -83,6 +83,8 @@ export const zAdEndcard = z.object({
   durationSec: z.number().positive().default(3),
   cta: z.string().optional(), // CTA copy (logo-cta) — falls back to product.cta
   subtitle: z.string().optional(), // one-liner copy (logo-blur-in) — falls back to product.oneLiner
+  vo: z.string().optional(), // endcard narration text (e.g. the final push line)
+  voAudio: zVoAudio.optional(), // generated endcard narration
 });
 export type AdEndcard = z.infer<typeof zAdEndcard>;
 

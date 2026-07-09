@@ -28,7 +28,11 @@ export function pageFrames(page: AdPage, fps: number = AD_FPS, voSpeed = 1): num
 
 export function endcardFrames(project: AdProject): number {
   if (!project.endcard.enabled) return 0;
-  return Math.max(1, Math.round((project.endcard.durationSec ?? 3) * (project.meta.fps || AD_FPS)));
+  const fps = project.meta.fps || AD_FPS;
+  // never cut the endcard VO: the card holds at least as long as the narration plays
+  const voSec = project.endcard.voAudio ? project.endcard.voAudio.durationSec / voSpeedOf(project) : 0;
+  const sec = Math.max(project.endcard.durationSec ?? 3, voSec);
+  return Math.max(1, Math.round(sec * fps));
 }
 
 /**
@@ -109,6 +113,10 @@ export function voIntervals(project: AdProject): FrameInterval[] {
     const from = offsets[i];
     out.push({ from, to: from + Math.ceil((p.voAudio.durationSec / speed) * fps) });
   });
+  if (project.endcard.enabled && project.endcard.voAudio) {
+    const from = adTotalFrames(project) - endcardFrames(project);
+    out.push({ from, to: from + Math.ceil((project.endcard.voAudio.durationSec / speed) * fps) });
+  }
   return out;
 }
 
