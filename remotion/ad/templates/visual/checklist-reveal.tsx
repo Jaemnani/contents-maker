@@ -19,6 +19,7 @@ export const Component: React.FC<VisualProps> = ({ page, product, assetBase }) =
     <AbsoluteFill>
       <SourceLayer source={page.source} assetBase={assetBase} />
       <AbsoluteFill style={{ background: "rgba(8,12,18,0.6)" }} />
+      {page.titleVisible !== false && (
       <AbsoluteFill style={{ justifyContent: "center", padding: "0 110px", gap: 34 }}>
         {lines.map((line, i) => {
           const delay = 6 + i * 9;
@@ -36,6 +37,7 @@ export const Component: React.FC<VisualProps> = ({ page, product, assetBase }) =
           );
         })}
       </AbsoluteFill>
+      )}
     </AbsoluteFill>
   );
 };

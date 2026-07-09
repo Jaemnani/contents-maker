@@ -20,6 +20,7 @@ export const CaptionBanner: React.FC<{
 }> = ({ text, product, page, bottom = 220 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
+  if (page.titleVisible === false) return null; // per-page text on/off
   // karaoke pages render VO words even when the static caption is empty
   const karaoke = page.captionMode === "karaoke" && !!wordsForPage(page);
   if (!text && !karaoke) return null;

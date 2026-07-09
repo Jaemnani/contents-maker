@@ -180,7 +180,16 @@ export default function PageInspector({
         <section className="flex flex-col gap-3">
           <div>
             <div className="mb-1 flex items-center justify-between text-xs text-muted">
-              <span>{hasTitle ? "제목 (caption)" : "자막 (caption)"}</span>
+              <span className="flex items-center gap-2">
+                {hasTitle ? "제목 (caption)" : "자막 (caption)"}
+                <button
+                  onClick={() => onPatch({ titleVisible: page.titleVisible === false ? undefined : false })}
+                  title={page.titleVisible === false ? "화면에 표시하기" : "화면에서 숨기기"}
+                  className={`rounded-full px-2 py-0.5 text-[10px] font-semibold transition-all duration-200 ${page.titleVisible === false ? "bg-ink/10 text-muted" : "bg-eli5 text-white"}`}
+                >
+                  {page.titleVisible === false ? "숨김" : "표시"}
+                </button>
+              </span>
               <span className={page.caption.length > CAPTION_MAX ? "text-warning" : ""}>
                 {page.caption.length}/{CAPTION_MAX}
               </span>

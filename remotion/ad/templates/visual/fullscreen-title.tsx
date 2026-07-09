@@ -35,11 +35,13 @@ export const Component: React.FC<VisualProps> = ({ page, product, assetBase }) =
   const base = textCss(page, { size: 84, weight: 900 });
   const box = backdropBox(backdrop, brand, page.titlePadding ?? 34);
 
+  const showTitle = page.titleVisible !== false;
   return (
     <AbsoluteFill>
       <SourceLayer source={page.source} assetBase={assetBase} />
-      {backdrop === "scrim" && <div style={{ position: "absolute", inset: 0, background: scrim }} />}
-      {filmOpacity > 0 && <div style={{ position: "absolute", inset: 0, background: `rgba(8,12,18,${filmOpacity})` }} />}
+      {showTitle && backdrop === "scrim" && <div style={{ position: "absolute", inset: 0, background: scrim }} />}
+      {showTitle && filmOpacity > 0 && <div style={{ position: "absolute", inset: 0, background: `rgba(8,12,18,${filmOpacity})` }} />}
+      {showTitle && (
       <div style={{ ...wrapPos, display: "flex", flexDirection: "column", alignItems: "center", gap: 22, ...anim }}>
         <div style={{ background: brand, color: "#fff", fontFamily: "Pretendard", fontWeight: 600, fontSize: 32, padding: "10px 26px", borderRadius: 999 }}>
           {product.name}
@@ -48,6 +50,7 @@ export const Component: React.FC<VisualProps> = ({ page, product, assetBase }) =
           <AnimatedText text={page.caption} page={page} frame={frame} fps={fps} durationInFrames={frames} brand={brand} />
         </h1>
       </div>
+      )}
     </AbsoluteFill>
   );
 };

@@ -17,6 +17,7 @@ export const Component: React.FC<VisualProps> = ({ page, product, assetBase }) =
       <SourceLayer source={page.source} assetBase={assetBase} />
       <AbsoluteFill style={{ background: "rgba(8,12,18,0.55)" }} />
       {filmOpacity > 0 && <AbsoluteFill style={{ background: `rgba(8,12,18,${filmOpacity})` }} />}
+      {page.titleVisible !== false && (
       <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", padding: "0 90px" }}>
         <div style={{ textAlign: "center", ...anim }}>
           <div style={{ color: brand, fontFamily: "Pretendard", fontWeight: 900, fontSize: 150, lineHeight: 0.7 }}>“</div>
@@ -26,6 +27,7 @@ export const Component: React.FC<VisualProps> = ({ page, product, assetBase }) =
           <div style={{ marginTop: 26, color: "rgba(255,255,255,0.72)", fontFamily: "Pretendard", fontWeight: 600, fontSize: 30 }}>— {product.name}</div>
         </div>
       </AbsoluteFill>
+      )}
     </AbsoluteFill>
   );
 };

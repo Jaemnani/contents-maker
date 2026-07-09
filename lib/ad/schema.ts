@@ -49,6 +49,7 @@ export const zAdPage = z.object({
   transitionTemplateId: z.string(), // transition from THIS page to the next (or endcard)
   caption: z.string(), // on-screen subtitle (ko, v1 single-language)
   captionMode: z.enum(["static", "karaoke"]).optional(), // karaoke = VO words highlighted in sync (default static)
+  titleVisible: z.boolean().optional(), // show/hide this page's on-screen text block (default true)
   titlePosition: z.enum(["top", "middle", "bottom"]).optional(), // title-capable visuals (default "top")
   // ── on-screen text style — applies to this page's caption/title in EVERY layout ──
   titleFont: z.string().optional(), // font key (default "Pretendard"); see remotion/ad/lib/fonts.ts

@@ -26,9 +26,11 @@ export const Component: React.FC<VisualProps> = ({ page, product, assetBase }) =
     <AbsoluteFill style={{ background: brand }}>
       {/* bottom brand panel (revealed as the media shrinks) */}
       <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: `${100 - MEDIA_PCT}%`, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 80px" }}>
-        <div style={{ ...textCss(page, { size: 64, weight: 900 }), textAlign: "center", whiteSpace: "pre-line", lineHeight: 1.2, ...anim, opacity: textOpacity * Number(anim.opacity ?? 1) }}>
-          {page.caption}
-        </div>
+        {page.titleVisible !== false && (
+          <div style={{ ...textCss(page, { size: 64, weight: 900 }), textAlign: "center", whiteSpace: "pre-line", lineHeight: 1.2, ...anim, opacity: textOpacity * Number(anim.opacity ?? 1) }}>
+            {page.caption}
+          </div>
+        )}
       </div>
       {filmOpacity > 0 && <div style={{ position: "absolute", inset: 0, background: `rgba(8,12,18,${filmOpacity})`, zIndex: 3 }} />}
       {/* top media — starts full-frame, springs to its box on top of the panel */}
