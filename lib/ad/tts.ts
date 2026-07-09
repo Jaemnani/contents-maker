@@ -108,12 +108,15 @@ export async function ttsPage(projectId: string, pageId: string): Promise<AdProj
   const text = page.vo.trim();
   if (!text) throw new Error("VO 텍스트가 비어 있습니다.");
 
-  const { provider, voice, ext } = resolveTtsProvider(snapshot.audio.ttsProvider);
-  const hash = voHash(`${provider}:${voice}`, text);
+  const pref = snapshot.audio.ttsProvider;
+  let sel = resolveTtsProvider(pref);
   const audioDirAbs = path.join(projectDirAbs(projectId), "audio");
-  const fileName = `page-${page.id}-${hash}.${ext}`;
-  const absPath = path.join(audioDirAbs, fileName);
-  const relPath = path.posix.join("outputs", "results", projectId, "audio", fileName);
+  const pathsFor = (s: typeof sel) => {
+    const hash = voHash(`${s.provider}:${s.voice}`, text);
+    const fileName = `page-${page.id}-${hash}.${s.ext}`;
+    return { hash, fileName, absPath: path.join(audioDirAbs, fileName), relPath: path.posix.join("outputs", "results", projectId, "audio", fileName) };
+  };
+  let { hash, fileName, absPath, relPath } = pathsFor(sel);
 
   if (page.voAudio?.hash === hash) {
     try {
@@ -126,10 +129,21 @@ export async function ttsPage(projectId: string, pageId: string): Promise<AdProj
 
   let buf: Buffer;
   let words: WordTiming[] | undefined;
-  if (provider === "gemini") {
-    buf = await geminiTts(text, voice);
-  } else {
-    ({ buf, words } = await elevenLabsTts(text, voice));
+  try {
+    if (sel.provider === "gemini") {
+      buf = await geminiTts(text, sel.voice);
+    } else {
+      ({ buf, words } = await elevenLabsTts(text, sel.voice));
+    }
+  } catch (e) {
+    // auto mode: ElevenLabs quota/credit exhaustion falls back to Gemini transparently
+    const msg = (e as Error).message;
+    const quotaHit = sel.provider === "elevenlabs" && /quota_exceeded|credits/i.test(msg);
+    if (!quotaHit || pref === "elevenlabs" || !hasGeminiKey()) throw e;
+    sel = { provider: "gemini", voice: getGeminiTtsVoice(), ext: "wav" };
+    ({ hash, fileName, absPath, relPath } = pathsFor(sel));
+    buf = await geminiTts(text, sel.voice);
+    words = undefined;
   }
   await fs.mkdir(audioDirAbs, { recursive: true });
   await fs.writeFile(absPath, buf);
