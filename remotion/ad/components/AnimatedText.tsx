@@ -2,11 +2,12 @@
 // word-pop, wave, shake-text, count-up). Block-level effects (fade/film/…) just render
 // the plain text — their animation is applied by the caller via introAnim. All motion is
 // frame-seeded and deterministic (no Math.random — renders must be reproducible).
-import React from "react";
+import React, { useContext } from "react";
 import { interpolate, spring } from "remotion";
 import type { AdPage } from "@/lib/ad/schema";
 import { PER_CHAR_EFFECTS } from "@/remotion/ad/lib/text";
 import { wordsForPage, chunkWords } from "@/lib/ad/captions";
+import { AudioEnvContext } from "@/remotion/ad/lib/audio-env";
 
 /** deterministic pseudo-random in [-1, 1] from integer seeds */
 function jitter(a: number, b: number): number {
@@ -22,11 +23,13 @@ export const AnimatedText: React.FC<{
   durationInFrames: number;
   brand: string;
 }> = ({ text, page, frame, fps, durationInFrames, brand }) => {
+  const { voSpeed } = useContext(AudioEnvContext);
   // ── karaoke: render VO words highlighted in sync (replaces the static caption) ──
   if (page.captionMode === "karaoke") {
     const words = wordsForPage(page);
     if (words?.length) {
-      const t = frame / fps;
+      // word timings are RAW seconds; at playbackRate r a word at s is audible at s/r
+      const t = (frame / fps) * voSpeed;
       const chunks = chunkWords(words, 4);
       const active = chunks.find((c) => t < c[c.length - 1].e) ?? chunks[chunks.length - 1];
       return (

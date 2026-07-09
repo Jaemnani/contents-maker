@@ -100,6 +100,7 @@ export const zAdAudio = z.object({
   sfxVolume: z.number().min(0).max(1).optional(), // default 0.7
   bpm: z.number().positive().optional(), // BGM tempo — used by "박자 스냅" (beat.ts)
   ttsProvider: z.enum(["auto", "elevenlabs", "gemini"]).optional(), // narration voice provider (default auto)
+  voSpeed: z.number().min(0.5).max(2).optional(), // narration playback rate (default 1) — no regen needed
 });
 export type AdAudio = z.infer<typeof zAdAudio>;
 

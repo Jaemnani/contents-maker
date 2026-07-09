@@ -18,9 +18,11 @@ import {
   videoStartFrames,
   videoSourceKey,
   adTotalFrames,
+  voSpeedOf,
 } from "@/remotion/ad/lib/timeline";
 import { MediaStartContext } from "@/remotion/ad/components/SourceLayer";
 import { transitionWhoosh, pageDing, DEFAULT_SFX_VOLUME } from "@/remotion/ad/lib/sfx";
+import { AudioEnvContext } from "@/remotion/ad/lib/audio-env";
 
 function bgmSrc(project: AdProject, assetBase: string): string | null {
   const bgm = project.audio.bgm;
@@ -59,6 +61,7 @@ export const AdComposition: React.FC<AdProps> = ({ project, assetBase }) => {
   const fps = project.meta.fps || 30;
   const pages = project.pages;
   const offsets = pageOffsets(project);
+  const voSpeed = voSpeedOf(project);
   const vStarts = videoStartFrames(project);
   const intervals = voIntervals(project);
   const ecFrames = endcardFrames(project);
@@ -76,12 +79,13 @@ export const AdComposition: React.FC<AdProps> = ({ project, assetBase }) => {
 
   const src = bgmSrc(project, assetBase);
   return (
+    <AudioEnvContext.Provider value={{ voSpeed }}>
     <AbsoluteFill style={{ background: COLORS.ink }}>
       {/* audio lane 1: VO — sequenced at page starts, full VO length (may bleed past a shortened page) */}
       {pages.map((p, i) =>
         p.voAudio ? (
-          <Sequence key={`vo-${p.id}`} from={offsets[i]} durationInFrames={Math.ceil(p.voAudio.durationSec * fps)}>
-            <Audio src={pathUrl(assetBase, p.voAudio.path)} />
+          <Sequence key={`vo-${p.id}`} from={offsets[i]} durationInFrames={Math.ceil((p.voAudio.durationSec / voSpeed) * fps)}>
+            <Audio src={pathUrl(assetBase, p.voAudio.path)} playbackRate={voSpeed} />
           </Sequence>
         ) : null
       )}
@@ -128,7 +132,7 @@ export const AdComposition: React.FC<AdProps> = ({ project, assetBase }) => {
 
       <TransitionSeries>
         {pages.map((p, i) => {
-          const frames = pageFrames(p, fps);
+          const frames = pageFrames(p, fps, voSpeed);
           const transFrames = transitionFramesAt(project, i);
           // last page exits via the ENDCARD's configured transition (when endcard is on)
           const transId =
@@ -154,5 +158,6 @@ export const AdComposition: React.FC<AdProps> = ({ project, assetBase }) => {
         )}
       </TransitionSeries>
     </AbsoluteFill>
+    </AudioEnvContext.Provider>
   );
 };

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { AdPage, AdProject } from "@/lib/ad/schema";
 import { newPageId, newAdPageForVisual, slotSource } from "@/lib/ad/schema";
-import { pageFrames } from "@/remotion/ad/lib/timeline";
+import { pageFrames, voSpeedOf } from "@/remotion/ad/lib/timeline";
 import { visualById } from "@/remotion/ad/templates/registry";
 import { VISUAL_METAS, visualSourceSlots } from "@/remotion/ad/templates/meta";
 import AddPageModal from "@/components/ad/AddPageModal";
@@ -56,7 +56,7 @@ export default function PageList({
     <div className="flex flex-col gap-2">
       {pages.map((p, i) => {
         const on = p.id === selectedId;
-        const sec = (pageFrames(p, fps) / fps).toFixed(1);
+        const sec = (pageFrames(p, fps, voSpeedOf(project)) / fps).toFixed(1);
         const missing = visualSourceSlots(p.visualTemplateId).filter((s) => slotSource(p, s.key).kind === "none").length;
         return (
           <div

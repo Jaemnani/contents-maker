@@ -190,6 +190,15 @@ export default function BgmPanel({
         <span className="text-[10px] leading-tight text-muted">
           {`${(audio.ttsProvider ?? "auto") === "auto" ? "자동 = 키가 있는 제공자(일레븐랩스 우선)" : "이후 ‘VO 생성/재생성’부터 적용"} · 제공자를 바꾸면 재생성 필요`}
         </span>
+        <label className="ml-auto flex items-center gap-2 text-xs text-muted">
+          말 속도 ×{(audio.voSpeed ?? 1).toFixed(2)}
+          <input
+            type="range" min={0.8} max={1.6} step={0.05}
+            value={audio.voSpeed ?? 1}
+            onChange={(e) => onAudio({ ...audio, voSpeed: parseFloat(e.target.value) })}
+            className="w-28"
+          />
+        </label>
       </div>
 
       {/* beat snap — align page cuts to the BGM tempo */}
