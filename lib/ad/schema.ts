@@ -99,6 +99,7 @@ export const zAdAudio = z.object({
   sfxEnabled: z.boolean().optional(), // transition whoosh + entrance ding (default false)
   sfxVolume: z.number().min(0).max(1).optional(), // default 0.7
   bpm: z.number().positive().optional(), // BGM tempo — used by "박자 스냅" (beat.ts)
+  ttsProvider: z.enum(["auto", "elevenlabs", "gemini"]).optional(), // narration voice provider (default auto)
 });
 export type AdAudio = z.infer<typeof zAdAudio>;
 

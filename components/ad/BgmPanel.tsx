@@ -170,6 +170,28 @@ export default function BgmPanel({
         )}
       </div>
 
+      {/* narration voice provider — applies to VO 생성 from now on */}
+      <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
+        <span className="text-xs text-muted">내레이션(TTS)</span>
+        <div className="flex gap-1">
+          {([["auto", "자동"], ["elevenlabs", "일레븐랩스"], ["gemini", "제미나이"]] as const).map(([v, label]) => {
+            const on = (audio.ttsProvider ?? "auto") === v;
+            return (
+              <button
+                key={v}
+                onClick={() => onAudio({ ...audio, ttsProvider: v })}
+                className={`rounded-md border px-2.5 py-1 text-xs transition-all duration-200 ${on ? "border-empathy bg-empathy/10 text-ink" : "border-border text-muted hover:border-empathy"}`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+        <span className="text-[10px] leading-tight text-muted">
+          {`${(audio.ttsProvider ?? "auto") === "auto" ? "자동 = 키가 있는 제공자(일레븐랩스 우선)" : "이후 ‘VO 생성/재생성’부터 적용"} · 제공자를 바꾸면 재생성 필요`}
+        </span>
+      </div>
+
       {/* beat snap — align page cuts to the BGM tempo */}
       <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
         <span className="text-xs text-muted">BPM</span>

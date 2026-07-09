@@ -28,9 +28,12 @@ const OUTPUT_FORMAT = "mp3_44100_128";
 const voHash = (key: string, text: string) =>
   createHash("sha256").update(`${key}\n${text}`).digest("hex").slice(0, 8);
 
-/** Pick the TTS provider: explicit env override, else whichever key exists (ElevenLabs first). */
-function resolveTtsProvider(): { provider: "elevenlabs" | "gemini"; voice: string; ext: "mp3" | "wav" } {
-  const explicit = getAdTtsProvider();
+/**
+ * Pick the TTS provider. Priority: project setting (audio.ttsProvider, UI-selectable,
+ * no restart needed) → env AD_TTS_PROVIDER → auto (whichever key exists, ElevenLabs first).
+ */
+function resolveTtsProvider(pref?: "auto" | "elevenlabs" | "gemini"): { provider: "elevenlabs" | "gemini"; voice: string; ext: "mp3" | "wav" } {
+  const explicit = pref && pref !== "auto" ? pref : getAdTtsProvider();
   const useGemini = explicit === "gemini" || (explicit !== "elevenlabs" && !hasElevenLabsKey() && hasGeminiKey());
   return useGemini
     ? { provider: "gemini", voice: getGeminiTtsVoice(), ext: "wav" }
@@ -105,7 +108,7 @@ export async function ttsPage(projectId: string, pageId: string): Promise<AdProj
   const text = page.vo.trim();
   if (!text) throw new Error("VO 텍스트가 비어 있습니다.");
 
-  const { provider, voice, ext } = resolveTtsProvider();
+  const { provider, voice, ext } = resolveTtsProvider(snapshot.audio.ttsProvider);
   const hash = voHash(`${provider}:${voice}`, text);
   const audioDirAbs = path.join(projectDirAbs(projectId), "audio");
   const fileName = `page-${page.id}-${hash}.${ext}`;
