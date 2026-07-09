@@ -13,9 +13,15 @@ import type { Language } from "@/lib/types";
 
 let bundleCache: Promise<string> | null = null;
 
-/** Bundle the remotion/ project once; reuse the serve URL across renders. */
+/**
+ * Bundle the remotion/ project; reuse the serve URL across renders IN PRODUCTION only.
+ * In dev the bundle must be rebuilt per render — the dev server hot-reloads code, and a
+ * process-lifetime cache would silently render with STALE components (the preview shows
+ * the new behavior, the mp4 doesn't).
+ */
 function getServeUrl(): Promise<string> {
-  if (!bundleCache) {
+  const dev = process.env.NODE_ENV !== "production";
+  if (dev || !bundleCache) {
     bundleCache = bundle({
       entryPoint: path.join(process.cwd(), "remotion", "index.ts"),
       // resolve the app's "@/..." alias inside the Remotion webpack bundle
