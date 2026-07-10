@@ -1,6 +1,6 @@
 // Client-side API helpers for the ad maker (browser fetch wrappers).
 "use client";
-import type { AdProject } from "@/lib/ad/schema";
+import type { AdProject, FactorySource, FactoryTopic, FormatKind } from "@/lib/ad/schema";
 
 async function jsonOrThrow(res: Response) {
   const d = await res.json().catch(() => ({}));
@@ -83,6 +83,26 @@ export async function getAdProject(projectId: string): Promise<AdProject> {
 
 export async function listAdProjects(): Promise<AdProject[]> {
   return (await jsonOrThrow(await fetch("/api/ad/project"))).projects ?? [];
+}
+
+// ── aib content factory (decision 제출 — stage 전이 후 프로젝트 반환) ────────────
+export type FactoryOpBody =
+  | { op: "topic"; topic: FactoryTopic }
+  | { op: "formats"; selected: FormatKind[] }
+  | { op: "source"; source: FactorySource }
+  | { op: "package" }
+  | { op: "published" }
+  | { op: "reset" };
+
+export async function factoryOp(projectId: string, body: FactoryOpBody): Promise<AdProject> {
+  const d = await jsonOrThrow(
+    await fetch("/api/ad/factory", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ projectId, ...body }),
+    })
+  );
+  return d.project;
 }
 
 /** LLM-draft pages (replaces project.pages). Returns the saved project + coercion warnings. */

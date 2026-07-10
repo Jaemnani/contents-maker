@@ -12,6 +12,7 @@ import PageList, { ENDCARD_PAGE_ID } from "@/components/ad/PageList";
 import { snapProjectToBeat } from "@/lib/ad/beat";
 import { themePatch } from "@/lib/ad/themes";
 import ThemeBar from "@/components/ad/ThemeBar";
+import FactoryPanel from "@/components/ad/FactoryPanel";
 import PageInspector from "@/components/ad/PageInspector";
 import PlayerPreview from "@/components/ad/PlayerPreview";
 import BgmPanel from "@/components/ad/BgmPanel";
@@ -331,6 +332,9 @@ export default function AdEditor({ project: initial, onExit }: { project: AdProj
 
       {/* one-click style themes — a single undoable patch over every page */}
       <ThemeBar disabled={busy} onApply={(t) => patchProject(themePatch(projRef.current, t))} />
+
+      {/* aib 콘텐츠 팩토리 — 주제 1개 → 다채널 콘텐츠 배치 (스킬 aib-content-factory L1) */}
+      <FactoryPanel project={project} disabled={busy} onApply={applyProject} onFlush={flushSave} />
 
       {/* AI 대본 생성 입력 · 브랜드 · BGM — one line */}
       <section className="mb-3 grid items-start gap-4 lg:grid-cols-3">

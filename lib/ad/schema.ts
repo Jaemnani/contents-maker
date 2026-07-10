@@ -165,6 +165,108 @@ export const zAdRenderRecord = z.object({
 });
 export type AdRenderRecord = z.infer<typeof zAdRenderRecord>;
 
+// ── aib content factory (스킬 aib-content-factory · AUTOMATION.md §2-1) ─────────
+// 하나의 광고 프로젝트 = 하나의 팩토리 배치. stage 상태 머신을 index.json에 저장해
+// 사람(UI)과 러너(ad-auto.mjs)가 같은 상태를 공유한다. 전부 optional — 구 프로젝트 무영향.
+
+export const zContentType = z.enum(["lie_speed", "open_weight", "opinion_clash"]); // 거짓말·속도 / 오픈웨이트 / 의견대립
+export type ContentType = z.infer<typeof zContentType>;
+
+export const zFactoryCategory = z.enum(["ai", "economy", "society", "life_culture", "it_science", "world"]);
+export type FactoryCategory = z.infer<typeof zFactoryCategory>;
+
+export const zFormatKind = z.enum(["text_only", "card_news", "single_image", "shorts", "ugc_demo"]);
+export type FormatKind = z.infer<typeof zFormatKind>;
+
+const zScore = z.enum(["high", "mid", "low"]);
+export const zFactoryTopic = z.object({
+  title: z.string(),
+  category: zFactoryCategory,
+  supportedTypes: z.array(zContentType).min(1), // 이 주제가 성립시키는 유형만 만든다 (SKILL 규칙 2)
+  scores: z.object({ trend: zScore, fit: zScore, hook: zScore }).optional(), // L2 자동 스코어링용
+  sourceNote: z.string().optional(), // 화제 근거 한 줄
+});
+export type FactoryTopic = z.infer<typeof zFactoryTopic>;
+
+export const zFormatPreset = z.object({
+  recommended: z.array(zFormatKind), // 스킬 추천(기본 체크)
+  selected: z.array(zFormatKind), // 사람/러너 확정
+});
+export type FormatPreset = z.infer<typeof zFormatPreset>;
+
+// aib.vote 비교 결과 소재 — L1은 수동 붙여넣기(STEP3). searchMode는 신뢰성 규칙상 필수.
+export const zFactorySource = z.object({
+  kind: z.enum(["text", "image"]),
+  question: z.string(),
+  modelA: z.object({ name: z.string(), answer: z.string() }),
+  modelB: z.object({ name: z.string(), answer: z.string() }),
+  searchMode: z.enum(["off", "on"]),
+  factNote: z.string().optional(), // 실제 사실(반전 근거) — 알고 있으면 기입
+  assets: z.array(z.string()).default([]), // outputs/-상대 캡처 이미지
+});
+export type FactorySource = z.infer<typeof zFactorySource>;
+
+export const zContentPiece = z.object({
+  type: zContentType,
+  hook: z.string(),
+  body: z.string(),
+  ctaUrl: z.string(),
+});
+export type ContentPiece = z.infer<typeof zContentPiece>;
+
+export const zFactoryChannel = z.enum(["dcinside", "naver_cafe", "threads", "x", "instagram", "youtube", "naver_clip", "tiktok", "reddit"]);
+export type FactoryChannel = z.infer<typeof zFactoryChannel>;
+
+export const zChannelOutput = z.object({
+  channel: zFactoryChannel,
+  format: zFormatKind,
+  aspectRatio: z.enum(["9:16", "4:5"]).optional(), // 영상 포맷만 — 인스타는 4:5
+  title: z.string().optional(),
+  body: z.string(),
+  tags: z.array(z.string()).default([]),
+  parts: z.array(z.string()).optional(), // 스레드·X 2단 구성
+});
+export type ChannelOutput = z.infer<typeof zChannelOutput>;
+
+export const zFactCheckItem = z.object({
+  claim: z.string(),
+  treatedAs: z.enum(["fact", "model_said"]), // 콘텐츠가 사실로 단정했나, "모델이 그렇게 답했다"로만 썼나
+  verified: z.boolean(),
+  note: z.string(),
+});
+export type FactCheckItem = z.infer<typeof zFactCheckItem>;
+
+export const zPublishPlan = z.object({
+  outputs: z.array(zChannelOutput),
+  factCheck: z.array(zFactCheckItem),
+  schedule: z.string(), // 배포 일정 제안 (글전용 즉시, 영상 제작 후 등)
+  rotationMemo: z.string(), // 이번에 못 만든 유형 → 다음 실행 우선
+  warnings: z.array(z.string()).optional(), // 생성 중 누락·주의 (조용한 누락 금지)
+});
+export type PublishPlan = z.infer<typeof zPublishPlan>;
+
+export const zFactoryStage = z.enum([
+  "topic_candidates", // L2: 러너가 후보 3개 생성 후 대기
+  "format_preset",
+  "awaiting_source",
+  "packaged",
+  "rendered",
+  "awaiting_publish",
+  "published",
+]);
+export type FactoryStage = z.infer<typeof zFactoryStage>;
+
+export const zFactoryState = z.object({
+  stage: zFactoryStage,
+  automationLevel: z.number().int().min(0).max(4).default(1),
+  topic: zFactoryTopic.optional(),
+  formatPreset: zFormatPreset.optional(),
+  source: zFactorySource.optional(),
+  pieces: z.array(zContentPiece).optional(),
+  plan: zPublishPlan.optional(),
+});
+export type FactoryState = z.infer<typeof zFactoryState>;
+
 export const zAdProject = z.object({
   // constrained so op:"save" can never write outside outputs/results/ad/ (path is derived from this)
   projectId: z.string().regex(/^ad\/[A-Za-z0-9_-][A-Za-z0-9._-]*$/, 'projectId must be "ad/<timestamp>"'),
@@ -177,6 +279,7 @@ export const zAdProject = z.object({
   audio: zAdAudio,
   latestRender: z.string().nullable().optional(),
   renderHistory: z.array(zAdRenderRecord).optional(),
+  factory: zFactoryState.optional(), // aib 콘텐츠 팩토리 배치 상태 (없으면 일반 광고 프로젝트)
 });
 export type AdProject = z.infer<typeof zAdProject>;
 
