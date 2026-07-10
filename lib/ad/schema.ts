@@ -51,6 +51,24 @@ export const zVoAudio = z.object({
 });
 export type VoAudio = z.infer<typeof zVoAudio>;
 
+// intro animation ids for on-screen text; last five render per-char/word via AnimatedText
+export const zTitleEffect = z.enum([
+  "fade", "film", "blur", "rise", "pop", "slide", "neon", "stamp", "typewriter", "word-pop", "wave", "shake-text", "count-up",
+]);
+export type TitleEffect = z.infer<typeof zTitleEffect>;
+
+// one caption STEP — steps replace the single caption, appear sequentially over the page
+// (equal time split), each re-running its intro effect with its own style overrides.
+export const zCaptionStep = z.object({
+  text: z.string(),
+  font: z.string().optional(), // falls back to the page's titleFont
+  color: z.string().optional(),
+  size: z.number().positive().optional(),
+  weight: z.number().optional(),
+  effect: zTitleEffect.optional(),
+});
+export type CaptionStep = z.infer<typeof zCaptionStep>;
+
 export const zAdPage = z.object({
   id: z.string(),
   sourceType: z.enum(["image", "video"]),
@@ -65,6 +83,8 @@ export const zAdPage = z.object({
   captionMode: z.enum(["static", "karaoke"]).optional(), // karaoke = VO words highlighted in sync (default static)
   titleVisible: z.boolean().optional(), // show/hide this page's on-screen text block (default true)
   titlePosition: z.enum(["top", "middle", "bottom"]).optional(), // title-capable visuals (default "top")
+  titleY: z.number().min(0).max(100).optional(), // fine vertical position (% from top, block center) — wins over titlePosition; keeps text in the 4:5 safe zone
+  captionSteps: z.array(zCaptionStep).optional(), // sequential caption steps (replaces the single caption when non-empty; karaoke wins)
   // ── on-screen text style — applies to this page's caption/title in EVERY layout ──
   titleFont: z.string().optional(), // font key (default "Pretendard"); see remotion/ad/lib/fonts.ts
   titleSize: z.number().positive().optional(), // font-size px (per-layout default if unset)
@@ -72,9 +92,7 @@ export const zAdPage = z.object({
   titleItalic: z.boolean().optional(), // italic
   titleLetterSpacing: z.number().optional(), // letter-spacing px (can be negative)
   titleColor: z.string().optional(), // text color hex (default white)
-  titleEffect: z
-    .enum(["fade", "film", "blur", "rise", "pop", "slide", "neon", "stamp", "typewriter", "word-pop", "wave", "shake-text", "count-up"])
-    .optional(), // intro animation; last five render per-char/word via AnimatedText
+  titleEffect: zTitleEffect.optional(), // intro animation; last five render per-char/word via AnimatedText
   titleBackdrop: z.enum(["banner", "none", "outline", "panel", "glass", "highlight", "scrim"]).optional(), // legibility treatment
   titlePadding: z.number().nonnegative().optional(), // panel/glass inner padding px (default 34)
   compareLabelA: z.string().optional(), // compare-2up: title beside the A tag
@@ -193,7 +211,7 @@ export function newAdPage(sourceType: "image" | "video" = "image"): AdPage {
     id: newPageId(),
     sourceType,
     source: { kind: "none" },
-    visualTemplateId: "plain-caption",
+    visualTemplateId: "fullscreen-title",
     motionTemplateId: sourceType === "image" ? "ken-burns-zoom" : "none",
     transitionTemplateId: "cut",
     caption: "",

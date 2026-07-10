@@ -1,7 +1,7 @@
 "use client";
 // Per-page inspector: source type/source, the 3 template dropdowns (catalog-driven,
 // filtered by compatibleSourceTypes), caption/VO text, duration override + warnings.
-import type { AdPage, AdProduct, AdProject } from "@/lib/ad/schema";
+import type { AdPage, AdProduct, AdProject, CaptionStep } from "@/lib/ad/schema";
 import Select, { type SelectOption } from "@/components/ui/Select";
 import type { TemplateMeta } from "@/remotion/ad/types";
 import SourceChooser from "@/components/ad/SourceChooser";
@@ -16,7 +16,7 @@ const CAPTION_MAX = 20;
 function templateMetas(cat: "visual" | "motion", sourceType: "image" | "video"): TemplateMeta[] {
   return Object.values(registry[cat])
     .map((t) => t.meta)
-    .filter((m) => (m.compatibleSourceTypes ?? ["image", "video"]).includes(sourceType));
+    .filter((m) => !m.hidden && (m.compatibleSourceTypes ?? ["image", "video"]).includes(sourceType));
 }
 const transitionMetas: TemplateMeta[] = Object.values(registry.transition).map((t) => t.meta);
 
@@ -32,6 +32,20 @@ const TITLE_FONTS: SelectOption[] = [
   { value: "Bebas Neue", label: "베바스 (영문 임팩트)" },
   { value: "Montserrat", label: "몽세라 (영문 모던)" },
   { value: "Elms Sans", label: "Elms Sans (영문)" },
+  { value: "Nanum Gothic", label: "나눔고딕" },
+  { value: "Noto Sans KR", label: "노토 산스" },
+  { value: "Gugi", label: "구기 (레트로)" },
+  { value: "Gaegu", label: "개구 (손글씨)" },
+  { value: "Gamja Flower", label: "감자꽃 (귀여움)" },
+  { value: "Song Myung", label: "송명 (클래식 명조)" },
+  { value: "Gowun Dodum", label: "고운돋움 (단정)" },
+  { value: "Gowun Batang", label: "고운바탕 (세리프)" },
+  { value: "Poor Story", label: "푸어스토리 (만화)" },
+  { value: "Yeon Sung", label: "연성 (붓느낌)" },
+  { value: "Stylish", label: "스타일리시" },
+  { value: "Single Day", label: "싱글데이 (통통)" },
+  { value: "East Sea Dokdo", label: "동해독도 (거친 붓)" },
+  { value: "Hahmlet", label: "함렛 (모던 세리프)" },
 ];
 const TITLE_EFFECTS: SelectOption[] = [
   { value: "fade", label: "기본 페이드 (깔끔)" },
@@ -222,24 +236,100 @@ export default function PageInspector({
                 </span>
               )}
             </div>
+            {/* caption STEPS — sequential sub-captions, each with its own style (static mode only) */}
+            {(page.captionMode ?? "static") === "static" && (
+              <div className="mt-1.5 flex flex-col gap-1.5 rounded-md border border-border bg-surface-muted/30 p-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-muted">
+                    자막 단계{" "}
+                    <span className="font-normal">
+                      {(page.captionSteps?.length ?? 0) > 0 ? "— 페이지 시간을 균등 분할해 순서대로 등장 (위 자막 대신 표시)" : "— 추가하면 자막이 단계별로 바뀌며 등장해요"}
+                    </span>
+                  </span>
+                  <button
+                    onClick={() => onPatch({ captionSteps: [...(page.captionSteps ?? []), { text: "" }] })}
+                    className="rounded border border-border px-2 py-0.5 text-[11px] text-ink transition-all duration-200 hover:border-empathy"
+                  >
+                    + 단계 추가
+                  </button>
+                </div>
+                {(page.captionSteps ?? []).map((s, i) => {
+                  const patchStep = (delta: Partial<CaptionStep>) => {
+                    const next = (page.captionSteps ?? []).map((x, j) => (j === i ? { ...x, ...delta } : x));
+                    onPatch({ captionSteps: next });
+                  };
+                  return (
+                    <div key={i} className="flex flex-col gap-1 rounded border border-border/60 bg-surface p-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="grid h-5 w-5 shrink-0 place-items-center rounded bg-empathy/15 text-[10px] font-semibold text-empathy">{i + 1}</span>
+                        <input
+                          value={s.text}
+                          onChange={(e) => patchStep({ text: e.target.value })}
+                          placeholder={`${i + 1}단계 문구`}
+                          className="min-w-0 flex-1 rounded-md border border-border bg-surface px-2 py-1 text-sm outline-none focus:border-primary"
+                        />
+                        <button
+                          onClick={() => {
+                            const next = (page.captionSteps ?? []).filter((_, j) => j !== i);
+                            onPatch({ captionSteps: next.length ? next : undefined });
+                          }}
+                          title="이 단계 삭제"
+                          className="shrink-0 rounded border border-border px-1.5 py-0.5 text-[11px] text-muted transition-all duration-200 hover:border-warning hover:text-warning"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Select value={s.font ?? ""} options={[{ value: "", label: "글꼴 (페이지 기본)" }, ...TITLE_FONTS]} onChange={(v) => patchStep({ font: v || undefined })} />
+                        <Select value={s.effect ?? ""} options={[{ value: "", label: "효과 (기본)" }, ...TITLE_EFFECTS]} onChange={(v) => patchStep({ effect: (v || undefined) as CaptionStep["effect"] })} />
+                        <input
+                          type="number"
+                          min={24}
+                          max={200}
+                          value={s.size ?? ""}
+                          placeholder="크기"
+                          onChange={(e) => {
+                            const v = parseInt(e.target.value, 10);
+                            patchStep({ size: Number.isFinite(v) && v > 0 ? v : undefined });
+                          }}
+                          title="글자 크기 (비우면 페이지 기본)"
+                          className="w-16 shrink-0 rounded-md border border-border bg-surface px-1.5 py-1 text-[12px] outline-none focus:border-primary"
+                        />
+                        <input
+                          type="color"
+                          value={s.color || page.titleColor || "#ffffff"}
+                          onChange={(e) => patchStep({ color: e.target.value })}
+                          title="이 단계 글자 색"
+                          className="h-7 w-8 shrink-0 cursor-pointer rounded border border-border bg-surface"
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
             {/* text style — applies to this page's on-screen text in every layout */}
             <div className="mt-1.5 flex flex-col gap-1.5 rounded-md border border-border bg-surface-muted/30 p-2">
               <div className="text-[11px] font-semibold text-muted">글자 스타일</div>
-              {hasTitle && (
-                <div className="flex items-center gap-2">
-                  <span className="w-12 shrink-0 text-[11px] text-muted">위치</span>
-                  <div className="flex gap-1">
-                    {([["top", "상단"], ["middle", "중단"], ["bottom", "하단"]] as const).map(([v, label]) => {
-                      const on = (page.titlePosition ?? "top") === v;
-                      return (
-                        <button key={v} onClick={() => onPatch({ titlePosition: v })} className={`rounded-md border px-2.5 py-1 text-[11px] transition-all duration-200 ${on ? "border-empathy bg-empathy/10 text-ink" : "border-border text-muted hover:border-empathy"}`}>
-                          {label}
-                        </button>
-                      );
-                    })}
-                  </div>
+              {/* vertical position — presets + fine % slider (works in every layout; 4:5 safe zone) */}
+              <div className="flex items-center gap-2">
+                <span className="w-12 shrink-0 text-[11px] text-muted">위치</span>
+                <div className="flex gap-1">
+                  <button onClick={() => onPatch({ titleY: undefined })} title="레이아웃 기본 위치" className={`rounded-md border px-2.5 py-1 text-[11px] transition-all duration-200 ${page.titleY == null ? "border-empathy bg-empathy/10 text-ink" : "border-border text-muted hover:border-empathy"}`}>
+                    기본
+                  </button>
+                  {([[12, "상단"], [50, "중단"], [82, "하단"]] as const).map(([y, label]) => {
+                    const on = page.titleY === y;
+                    return (
+                      <button key={y} onClick={() => onPatch({ titleY: y })} className={`rounded-md border px-2.5 py-1 text-[11px] transition-all duration-200 ${on ? "border-empathy bg-empathy/10 text-ink" : "border-border text-muted hover:border-empathy"}`}>
+                        {label}
+                      </button>
+                    );
+                  })}
                 </div>
-              )}
+                <input type="range" min={4} max={94} step={1} value={page.titleY ?? (hasTitle ? 14 : 85)} onChange={(e) => onPatch({ titleY: parseInt(e.target.value, 10) })} className="flex-1" />
+                <span className="w-9 shrink-0 text-right text-[11px] text-muted">{page.titleY != null ? `${page.titleY}%` : "자동"}</span>
+              </div>
               <div className="flex items-center gap-2">
                 <span className="w-12 shrink-0 text-[11px] text-muted">글꼴</span>
                 <Select value={page.titleFont || "Pretendard"} options={TITLE_FONTS} onChange={(v) => onPatch({ titleFont: v })} />

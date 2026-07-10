@@ -16,7 +16,7 @@ export default function AddPageModal({
   onClose: () => void;
 }) {
   if (!open) return null;
-  const options = Object.values(VISUAL_METAS);
+  const options = Object.values(VISUAL_METAS).filter((m) => !m.hidden);
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4" onClick={onClose}>
       <div className="w-full max-w-lg rounded-2xl border border-border bg-surface p-5" onClick={(e) => e.stopPropagation()}>

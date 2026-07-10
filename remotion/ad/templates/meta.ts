@@ -65,6 +65,7 @@ export const VISUAL_METAS: Record<string, TemplateMeta> = {
     hint: "배경이 꽉 차고 아래 자막 하나. 가장 무난한 기본형.",
     compatibleSourceTypes: ["image", "video"],
     defaultDurationSec: 3,
+    hidden: true, // superseded by 제목 강조(fullscreen-title) + 위치/배경 옵션 — legacy pages still render
   },
   "compare-2up": {
     id: "compare-2up",
@@ -283,7 +284,7 @@ export const ENDCARD_METAS: Record<string, TemplateMeta> = {
 };
 
 // Safe defaults — unknown ids coerce to these (LLM drift, removed templates).
-export const DEFAULT_VISUAL = "plain-caption";
+export const DEFAULT_VISUAL = "fullscreen-title";
 export const DEFAULT_MOTION = "none";
 export const DEFAULT_TRANSITION = "cut";
 
@@ -296,12 +297,12 @@ export function transitionDurationFrames(id: string): number {
   return transitionMeta(id).durationFrames ?? 12;
 }
 
-/** JSON-safe metadata list for the UI and the LLM prompt. */
+/** JSON-safe metadata list for the UI and the LLM prompt (hidden templates excluded). */
 export function catalog(): TemplateMeta[] {
   return [
     ...Object.values(VISUAL_METAS),
     ...Object.values(MOTION_METAS),
     ...Object.values(TRANSITION_METAS),
     ...Object.values(ENDCARD_METAS),
-  ];
+  ].filter((m) => !m.hidden);
 }

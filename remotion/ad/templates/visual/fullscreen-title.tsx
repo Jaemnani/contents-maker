@@ -8,21 +8,33 @@ import { BRAND_FALLBACK } from "@/remotion/ad/components/CaptionBanner";
 import { textCss, introAnim, backdropBox, backdropShadow } from "@/remotion/ad/lib/text";
 import { pageFrames } from "@/remotion/ad/lib/timeline";
 import { AnimatedText } from "@/remotion/ad/components/AnimatedText";
+import { captionStepView } from "@/lib/ad/captions";
 
 export const Component: React.FC<VisualProps> = ({ page, product, assetBase }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const brand = product.brandColor || BRAND_FALLBACK;
 
-  const pos = page.titlePosition ?? "top";
-  const wrapPos: React.CSSProperties =
-    pos === "middle"
-      ? { position: "absolute", inset: 0, justifyContent: "center" }
-      : pos === "bottom"
-        ? { position: "absolute", left: 0, right: 0, bottom: 240 }
-        : { position: "absolute", left: 0, right: 0, top: 150 };
+  const pageDur = pageFrames(page, fps);
+  // caption steps override the single title (each step replays its intro effect)
+  const step = page.captionMode === "karaoke" ? null : captionStepView(page, frame, pageDur);
+  const vPage = step?.page ?? page;
+  const vFrame = step?.frame ?? frame;
+  const frames = step?.frames ?? pageDur;
 
-  const backdrop = page.titleBackdrop ?? "outline"; // big titles default to a clean outline
+  // titleY (fine %, block center) wins over the top/middle/bottom preset
+  const pos = page.titleY != null ? (page.titleY < 33 ? "top" : page.titleY < 66 ? "middle" : "bottom") : page.titlePosition ?? "top";
+  const { anim, filmOpacity } = introAnim(vFrame, fps, vPage.titleEffect ?? "fade", brand, frames);
+  const wrapPos: React.CSSProperties =
+    page.titleY != null
+      ? { position: "absolute", left: 0, right: 0, top: `${page.titleY}%`, transform: `translateY(-50%)${anim.transform ? ` ${anim.transform}` : ""}` }
+      : pos === "middle"
+        ? { position: "absolute", inset: 0, justifyContent: "center" }
+        : pos === "bottom"
+          ? { position: "absolute", left: 0, right: 0, bottom: 240 }
+          : { position: "absolute", left: 0, right: 0, top: 150 };
+
+  const backdrop = vPage.titleBackdrop ?? "outline"; // big titles default to a clean outline
   const scrim =
     pos === "bottom"
       ? "linear-gradient(0deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 30%)"
@@ -30,10 +42,8 @@ export const Component: React.FC<VisualProps> = ({ page, product, assetBase }) =
         ? "linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(0,0,0,0.32) 50%, rgba(0,0,0,0) 70%)"
         : "linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 30%)";
 
-  const frames = pageFrames(page, fps);
-  const { anim, filmOpacity } = introAnim(frame, fps, page.titleEffect ?? "fade", brand, frames);
-  const base = textCss(page, { size: 84, weight: 900 });
-  const box = backdropBox(backdrop, brand, page.titlePadding ?? 34);
+  const base = textCss(vPage, { size: 84, weight: 900 });
+  const box = backdropBox(backdrop, brand, vPage.titlePadding ?? 34);
 
   const showTitle = page.titleVisible !== false;
   return (
@@ -42,14 +52,14 @@ export const Component: React.FC<VisualProps> = ({ page, product, assetBase }) =
       {showTitle && backdrop === "scrim" && <div style={{ position: "absolute", inset: 0, background: scrim }} />}
       {showTitle && filmOpacity > 0 && <div style={{ position: "absolute", inset: 0, background: `rgba(8,12,18,${filmOpacity})` }} />}
       {showTitle && (
-      <div style={{ ...wrapPos, display: "flex", flexDirection: "column", alignItems: "center", gap: 22, ...anim }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 22, ...anim, ...wrapPos }}>
         {product.showName !== false && (
           <div style={{ background: brand, color: "#fff", fontFamily: "Pretendard", fontWeight: 600, fontSize: 32, padding: "10px 26px", borderRadius: 999 }}>
             {product.name}
           </div>
         )}
         <h1 style={{ ...base, margin: 0, lineHeight: 1.18, textAlign: "center", maxWidth: 940, whiteSpace: "pre-line", textShadow: backdropShadow(backdrop), ...box }}>
-          <AnimatedText text={page.caption} page={page} frame={frame} fps={fps} durationInFrames={frames} brand={brand} />
+          <AnimatedText text={vPage.caption} page={vPage} frame={vFrame} fps={fps} durationInFrames={frames} brand={brand} />
         </h1>
       </div>
       )}

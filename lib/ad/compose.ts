@@ -222,13 +222,15 @@ export async function composeTextForPages(project: AdProject): Promise<{ pages: 
     if (!t) {
       // LLM returned fewer entries — BLANK the topic-specific copy instead of keeping the
       // template's previous-campaign captions/VO (which would leak into the new video).
-      return { ...p, caption: "", vo: "", voAudio: undefined, imagePrompt: undefined, clipQuery: undefined };
+      return { ...p, caption: "", vo: "", voAudio: undefined, captionSteps: undefined, imagePrompt: undefined, clipQuery: undefined };
     }
     if (t.caption.length > 20) warnings.push(`페이지 ${i + 1}: 자막이 20자를 넘습니다 (${t.caption.length}자)`);
     return {
       ...p,
       caption: t.caption,
       vo: t.vo,
+      // step texts are topic-specific copy — the template's steps would leak the old campaign
+      captionSteps: undefined,
       // the vo text changed → the template's old narration audio no longer matches; drop
       // it so a TTS-less run can't render old-topic voiceover (durations fall back).
       voAudio: t.vo === p.vo ? p.voAudio : undefined,

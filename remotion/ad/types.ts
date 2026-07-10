@@ -19,6 +19,8 @@ export interface TemplateMeta {
   sourceSlots?: { key: "A" | "B" | "C" | "D"; label: string }[];
   /** visual only — shows a big title (page.caption) whose vertical position is adjustable. */
   hasTitle?: boolean;
+  /** hidden from pickers + the LLM catalog (kept registered so legacy pages still render). */
+  hidden?: boolean;
   /** fallback page length when there is no VO and no override. */
   defaultDurationSec?: number;
   /** transition only — series overlap length. */

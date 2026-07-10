@@ -45,3 +45,37 @@ export function chunkWords(words: WordTiming[], size = 4): WordTiming[][] {
 }
 
 const round3 = (n: number) => Math.round(n * 1000) / 1000;
+
+// ── caption steps ─────────────────────────────────────────────────────────────
+// Steps replace the single caption: the page duration is split equally, each step's
+// text shows in order and re-runs its intro effect with its own style overrides.
+
+export interface CaptionStepView {
+  page: AdPage; // page with the active step's text/style merged over the base style
+  frame: number; // frame LOCAL to the step (so the intro effect replays per step)
+  frames: number; // the step's own duration in frames (for effect-ramp compression)
+  text: string;
+}
+
+/** Active caption step for a frame, or null when the page has no steps (karaoke wins upstream). */
+export function captionStepView(page: AdPage, frame: number, durationInFrames: number): CaptionStepView | null {
+  const steps = page.captionSteps;
+  if (!steps?.length || durationInFrames <= 0) return null;
+  const per = durationInFrames / steps.length;
+  const i = Math.min(steps.length - 1, Math.max(0, Math.floor(frame / per)));
+  const s = steps[i];
+  return {
+    page: {
+      ...page,
+      caption: s.text,
+      titleFont: s.font ?? page.titleFont,
+      titleColor: s.color ?? page.titleColor,
+      titleSize: s.size ?? page.titleSize,
+      titleWeight: s.weight ?? page.titleWeight,
+      titleEffect: s.effect ?? page.titleEffect,
+    },
+    frame: Math.max(0, frame - Math.floor(i * per)),
+    frames: Math.max(1, Math.floor(per)),
+    text: s.text,
+  };
+}

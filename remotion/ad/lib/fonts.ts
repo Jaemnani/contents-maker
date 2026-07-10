@@ -10,6 +10,20 @@ import { loadFont as nanumPen } from "@remotion/google-fonts/NanumPenScript";
 import { loadFont as bebasNeue } from "@remotion/google-fonts/BebasNeue";
 import { loadFont as montserrat } from "@remotion/google-fonts/Montserrat";
 import { loadFont as elmsSans } from "@remotion/google-fonts/ElmsSans";
+import { loadFont as nanumGothic } from "@remotion/google-fonts/NanumGothic";
+import { loadFont as notoSansKR } from "@remotion/google-fonts/NotoSansKR";
+import { loadFont as gugi } from "@remotion/google-fonts/Gugi";
+import { loadFont as gaegu } from "@remotion/google-fonts/Gaegu";
+import { loadFont as gamjaFlower } from "@remotion/google-fonts/GamjaFlower";
+import { loadFont as songMyung } from "@remotion/google-fonts/SongMyung";
+import { loadFont as gowunDodum } from "@remotion/google-fonts/GowunDodum";
+import { loadFont as gowunBatang } from "@remotion/google-fonts/GowunBatang";
+import { loadFont as poorStory } from "@remotion/google-fonts/PoorStory";
+import { loadFont as yeonSung } from "@remotion/google-fonts/YeonSung";
+import { loadFont as stylish } from "@remotion/google-fonts/Stylish";
+import { loadFont as singleDay } from "@remotion/google-fonts/SingleDay";
+import { loadFont as eastSeaDokdo } from "@remotion/google-fonts/EastSeaDokdo";
+import { loadFont as hahmlet } from "@remotion/google-fonts/Hahmlet";
 
 type Loader = () => { fontFamily: string };
 
@@ -24,6 +38,20 @@ const LOADERS: Record<string, Loader> = {
   "Bebas Neue": bebasNeue,
   Montserrat: montserrat,
   "Elms Sans": elmsSans,
+  "Nanum Gothic": nanumGothic,
+  "Noto Sans KR": notoSansKR,
+  Gugi: gugi,
+  Gaegu: gaegu,
+  "Gamja Flower": gamjaFlower,
+  "Song Myung": songMyung,
+  "Gowun Dodum": gowunDodum,
+  "Gowun Batang": gowunBatang,
+  "Poor Story": poorStory,
+  "Yeon Sung": yeonSung,
+  Stylish: stylish,
+  "Single Day": singleDay,
+  "East Sea Dokdo": eastSeaDokdo,
+  Hahmlet: hahmlet,
 };
 
 const cache: Record<string, string> = {};
