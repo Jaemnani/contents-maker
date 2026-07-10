@@ -8,7 +8,7 @@ import { randomUUID } from "crypto";
 import { z } from "zod";
 import { OUTPUTS_ROOT, timestamp } from "@/lib/storage";
 import { readAdProject, writeAdProject, projectDirAbs } from "@/lib/ad/store";
-import { newPageId, slotSource, SLOT_SOURCE_FIELD, SLOT_PROMPT_FIELD, type SlotKey } from "@/lib/ad/schema";
+import { newPageId, slotSource, aspectOf, SLOT_SOURCE_FIELD, SLOT_PROMPT_FIELD, type SlotKey } from "@/lib/ad/schema";
 import type { AdProject, PageSource } from "@/lib/ad/schema";
 import { composeTextForPages } from "@/lib/ad/compose";
 import { generateImageSources } from "@/lib/post/source-gen";
@@ -317,7 +317,7 @@ export async function runAutomation(cfg: AutoConfig, assetBase: string): Promise
       }
       const model = keyModel[key];
       try {
-        const { refs, errors } = await generateImageSources({ language: "ko", prompt, models: [model], aspect: "9:16" });
+        const { refs, errors } = await generateImageSources({ language: "ko", prompt, models: [model], aspect: aspectOf(project.meta.width, project.meta.height) });
         const ref = refs[0];
         if (!ref) {
           warnings.push(`p${i + 1} ${slot}: 이미지 생성 실패 — ${errors[0]?.error ?? "빈 결과"}`);

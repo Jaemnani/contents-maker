@@ -14,7 +14,7 @@ export default function PlayerPreview({ project }: { project: AdProject }) {
         <AdPlayer project={project} />
       </div>
       <div className="text-right text-xs text-muted">
-        총 {sec}초 · {frames}프레임 · 1080×1920
+        총 {sec}초 · {frames}프레임 · {project.meta.width || 1080}×{project.meta.height || 1920}
       </div>
     </div>
   );

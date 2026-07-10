@@ -60,7 +60,7 @@ export interface MotionTemplate {
 }
 export interface TransitionTemplate {
   meta: TemplateMeta;
-  make: (durationInFrames: number) => TransitionSpec;
+  make: (durationInFrames: number, size?: { width: number; height: number }) => TransitionSpec;
 }
 export interface EndcardTemplate {
   meta: TemplateMeta;

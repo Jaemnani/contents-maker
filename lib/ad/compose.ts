@@ -6,7 +6,7 @@ import { z } from "zod";
 import { OPENROUTER_BASE, authHeaders, toError } from "@/lib/openrouter/client";
 import { parseJsonLoose } from "@/lib/openrouter/json";
 import { getAdComposeModel } from "@/lib/env";
-import { zComposeOutput, newPageId } from "@/lib/ad/schema";
+import { zComposeOutput, newPageId, aspectOf } from "@/lib/ad/schema";
 import type { AdPage, AdProduct, AdProject } from "@/lib/ad/schema";
 // meta.ts only (pure data) — importing the component registry here would evaluate
 // remotion inside a server route and crash on React.createContext.
@@ -23,14 +23,14 @@ import {
 const PAGE_MIN = 5;
 const PAGE_MAX = 10;
 
-function systemPrompt(): string {
+function systemPrompt(aspect: string): string {
   const cat = catalog().filter((m) => m.category !== "endcard");
   const lines = cat.map(
     (m) =>
       `- ${m.category}:"${m.id}" (${m.describe}${m.compatibleSourceTypes ? `; sources: ${m.compatibleSourceTypes.join("/")}` : ""})`
   );
   return [
-    "You are a short-form ad scriptwriter for a 9:16 vertical product ad (TapNow-style: casual spoken Korean hooks, fast pacing).",
+    `You are a short-form ad scriptwriter for a ${aspect} vertical product ad (TapNow-style: casual spoken Korean hooks, fast pacing).`,
     "Given a topic and a product, design the ad as a sequence of PAGES. Each page = one template combo + caption + narration.",
     "",
     "TEMPLATE CATALOG (use ONLY these ids; respect source compatibility):",
@@ -41,7 +41,7 @@ function systemPrompt(): string {
     "2) caption: on-screen Korean text, <=20 characters, punchy.",
     "3) vo: natural spoken Korean (반말 금지, ~요체), no exaggeration, no unverifiable performance/efficacy claims, no competitor disparagement.",
     '4) Structure: hook (problem) → product reveal/demo → value props → social proof or result → final push. Use "fullscreen-title" for the hook, "ui-demo-frame" with motion "shrink-into-ui" for the product reveal.',
-    '5) sourceType: "video" pages MUST use video-compatible templates and include "clipQuery" (short English hint to find a stock clip). "image" pages include "imagePrompt" (vivid English image-generation prompt, vertical 9:16, no text in image).',
+    `5) sourceType: "video" pages MUST use video-compatible templates and include "clipQuery" (short English hint to find a stock clip). "image" pages include "imagePrompt" (vivid English image-generation prompt, vertical ${aspect}, no text in image).`,
     '6) transitionTemplateId is the transition FROM this page TO the next. Vary them; use "cut" for fast beats; prefer "zoom-blur" or "dreamy-zoom" on the LAST page (into the endcard).',
     'Output ONLY this JSON object, no prose: {"pages":[{"sourceType":"image","visualTemplateId":"...","motionTemplateId":"...","transitionTemplateId":"...","caption":"...","vo":"...","imagePrompt":"...","clipQuery":"..."}]}',
   ].join("\n");
@@ -118,7 +118,7 @@ function coercePage(raw: z.infer<typeof zComposeOutput>["pages"][number], i: num
 export async function composeAdPages(project: AdProject): Promise<ComposeResult> {
   const model = getAdComposeModel();
   const topic = project.meta.topic || project.product.oneLiner;
-  const sys = systemPrompt();
+  const sys = systemPrompt(aspectOf(project.meta.width, project.meta.height));
   const user = userPrompt(topic, project.product);
 
   let res = await callLlm(model, sys, user, true);
@@ -188,7 +188,7 @@ export async function composeTextForPages(project: AdProject): Promise<{ pages: 
     "- caption: on-screen Korean text, <=20 characters, punchy, about the TOPIC.",
     "- vo: natural spoken Korean (~요체, 반말 금지), 2-4 seconds (~15-30 syllables), no exaggeration / unverifiable claims / competitor disparagement.",
     '- 2분할 비교(compare) pages: the caption labels two options (A/B) and the imagePrompt should describe a SINGLE clear subject for the slot (NOT a "split screen").',
-    '- image pages: add "imagePrompt" (vivid English image-gen prompt, vertical 9:16, no text in image). video pages: add "clipQuery" (short English stock-clip hint).',
+    `- image pages: add "imagePrompt" (vivid English image-gen prompt, vertical ${aspectOf(project.meta.width, project.meta.height)}, no text in image). video pages: add "clipQuery" (short English stock-clip hint).`,
     `- Output ONLY this JSON: {"pages":[${"{\"caption\":\"...\",\"vo\":\"...\",\"imagePrompt\":\"...\"}"}]} with exactly ${project.pages.length} entries.`,
   ].join("\n");
   // only brand identity — NOT the template's stale oneLiner/valueProps (which describe other topics)

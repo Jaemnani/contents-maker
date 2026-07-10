@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { generateImageSources } from "@/lib/post/source-gen";
 import { readAdProject, mutateAdProject } from "@/lib/ad/store";
-import { SLOT_SOURCE_FIELD, SLOT_PROMPT_FIELD } from "@/lib/ad/schema";
+import { SLOT_SOURCE_FIELD, SLOT_PROMPT_FIELD, aspectOf } from "@/lib/ad/schema";
 import { FalError } from "@/lib/fal/client";
 import { WsError } from "@/lib/ws/client";
 import { OpenRouterError } from "@/lib/openrouter/client";
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
       language: "ko",
       prompt: p.prompt,
       models: [p.model],
-      aspect: "9:16",
+      aspect: aspectOf(snapshot.meta.width, snapshot.meta.height),
     });
     const ref = refs[0];
     if (!ref) throw new Error(errors[0]?.error || "이미지 생성 실패");

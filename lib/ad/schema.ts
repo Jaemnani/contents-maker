@@ -8,6 +8,20 @@ export const AD_FPS = 30;
 export const AD_W = 1080;
 export const AD_H = 1920;
 
+// Output aspect presets — 9:16 (쇼츠/틱톡/클립) and 4:5 (인스타 피드).
+export const AD_ASPECTS = {
+  "9:16": { width: 1080, height: 1920 },
+  "4:5": { width: 1080, height: 1350 },
+} as const;
+export type AdAspect = keyof typeof AD_ASPECTS;
+
+/** Closest aspect label for stored meta dimensions (default 9:16). */
+export function aspectOf(width?: number, height?: number): AdAspect {
+  if (!width || !height) return "9:16";
+  const r = height / width;
+  return Math.abs(r - 1.25) < Math.abs(r - 16 / 9) ? "4:5" : "9:16";
+}
+
 // Mirrors the AssetRef interface (lib/composition-types.ts) for runtime validation.
 export const zAssetRef = z.object({
   datasetPath: z.string(),

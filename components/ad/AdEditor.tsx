@@ -3,6 +3,7 @@
 // Layout: page list | inspector | live Player preview.
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { AdPage, AdProject } from "@/lib/ad/schema";
+import { AD_ASPECTS, aspectOf, type AdAspect } from "@/lib/ad/schema";
 import { saveAdProject, composeAd, ttsAdPage, ttsAdEndcard } from "@/lib/client/ad";
 import { useModels } from "@/hooks/useModels";
 import type { SelectOption } from "@/components/ui/Select";
@@ -307,6 +308,22 @@ export default function AdEditor({ project: initial, onExit }: { project: AdProj
           placeholder="주제"
           className="ml-3 w-64 rounded-md border border-border bg-surface px-3 py-1.5 text-base outline-none focus:border-primary"
         />
+        {/* output aspect — 9:16(쇼츠/클립) vs 4:5(인스타 피드) */}
+        <div className="ml-2 flex gap-1">
+          {(Object.keys(AD_ASPECTS) as AdAspect[]).map((a) => {
+            const on = aspectOf(project.meta.width, project.meta.height) === a;
+            return (
+              <button
+                key={a}
+                onClick={() => patchProject({ meta: { ...projRef.current.meta, ...AD_ASPECTS[a] } })}
+                title={a === "9:16" ? "쇼츠 · 틱톡 · 네이버 클립" : "인스타그램 피드"}
+                className={`rounded-md border px-2.5 py-1.5 text-xs font-semibold transition-all duration-200 ${on ? "border-empathy bg-empathy/10 text-ink" : "border-border text-muted hover:border-empathy"}`}
+              >
+                {a}
+              </button>
+            );
+          })}
+        </div>
         <span className="ml-auto text-xs text-muted">{saving ? "저장 중…" : "저장됨"}</span>
       </header>
 

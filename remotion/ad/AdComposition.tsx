@@ -147,7 +147,9 @@ export const AdComposition: React.FC<AdProps> = ({ project, assetBase }) => {
             i === pages.length - 1 && project.endcard.enabled
               ? project.endcard.transitionTemplateId
               : p.transitionTemplateId;
-          const spec = transFrames > 0 ? transitionById(transId).make(transFrames) : null;
+          const spec = transFrames > 0
+            ? transitionById(transId).make(transFrames, { width: project.meta.width || 1080, height: project.meta.height || 1920 })
+            : null;
           return (
             <Fragment key={p.id}>
               <TransitionSeries.Sequence durationInFrames={frames}>
