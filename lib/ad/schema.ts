@@ -183,8 +183,9 @@ export const zFactoryTopic = z.object({
   title: z.string(),
   category: zFactoryCategory,
   supportedTypes: z.array(zContentType).min(1), // 이 주제가 성립시키는 유형만 만든다 (SKILL 규칙 2)
-  scores: z.object({ trend: zScore, fit: zScore, hook: zScore }).optional(), // L2 자동 스코어링용
-  sourceNote: z.string().optional(), // 화제 근거 한 줄
+  scores: z.object({ trend: zScore, fit: zScore, hook: zScore }).optional(), // 3중 스코어링 (트렌드·제품적합·후킹)
+  typeNote: z.string().optional(), // 각 유형이 성립하는 근거 한 줄
+  sourceNote: z.string().optional(), // 화제 근거 한 줄 (원 헤드라인·출처)
 });
 export type FactoryTopic = z.infer<typeof zFactoryTopic>;
 
@@ -259,6 +260,7 @@ export type FactoryStage = z.infer<typeof zFactoryStage>;
 export const zFactoryState = z.object({
   stage: zFactoryStage,
   automationLevel: z.number().int().min(0).max(4).default(1),
+  candidates: z.array(zFactoryTopic).optional(), // STEP1 추천 후보 3개 (택1 대기)
   topic: zFactoryTopic.optional(),
   formatPreset: zFormatPreset.optional(),
   source: zFactorySource.optional(),

@@ -11,6 +11,7 @@ import {
   type FormatKind,
 } from "@/lib/ad/schema";
 import { mutateAdProject, projectDirAbs, projectRelDir, readAdProject } from "@/lib/ad/store";
+import { pickTopicCandidates } from "@/lib/ad/factory/step1-topic";
 import { packageByType } from "@/lib/ad/factory/step4-package";
 import { buildShortsSpec, renderPerChannel } from "@/lib/ad/factory/step5-channel";
 import { buildPublishPlan, factCheck } from "@/lib/ad/factory/step6-output";
@@ -18,6 +19,7 @@ import { AIB_CTA, recommendFormats } from "@/lib/ad/factory/presets";
 import { AIB_LOGO_ABS } from "@/lib/ad/factory/rules/voice";
 
 export type FactoryInput =
+  | { op: "candidates" } // STEP1: 트렌드 수집 → 후보 3개 추천 (택1 대기)
   | { op: "topic"; topic: FactoryTopic }
   | { op: "formats"; selected: FormatKind[] }
   | { op: "source"; source: FactorySource }
@@ -27,6 +29,14 @@ export type FactoryInput =
 
 export async function resolveDecision(projectId: string, input: FactoryInput): Promise<AdProject> {
   switch (input.op) {
+    case "candidates": {
+      // 트렌드 수집 + LLM 스코어링은 잠금 밖(느림) — 결과 반영만 잠금 안에서
+      const candidates = await pickTopicCandidates();
+      return mutateAdProject(projectId, (p) => {
+        p.factory = { stage: "topic_candidates", automationLevel: 1, candidates };
+      });
+    }
+
     case "topic":
       // STEP1 확정(L1: 사람이 주제 입력) → STEP2 추천 프리셋 제시 상태로
       return mutateAdProject(projectId, (p) => {
@@ -36,7 +46,7 @@ export async function resolveDecision(projectId: string, input: FactoryInput): P
           automationLevel: 1,
           topic: input.topic,
           formatPreset: { recommended, selected: recommended },
-        };
+        }; // 후보(candidates)는 택1과 함께 소진 — 새 배치는 다시 추천받는다
         p.meta.topic = input.topic.title; // 기존 파이프라인(대본/트렌드)과 주제 정렬
       });
 

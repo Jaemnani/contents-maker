@@ -7,9 +7,10 @@ import { zFactorySource, zFactoryTopic, zFormatKind } from "@/lib/ad/schema";
 import { resolveDecision, type FactoryInput } from "@/lib/ad/factory/decision";
 
 export const runtime = "nodejs";
-export const maxDuration = 300; // package는 LLM 4회 체인 (골자→채널→쇼츠→팩트체크)
+export const maxDuration = 300; // package는 LLM 다회 체인, candidates는 트렌드 수집+스코어링
 
 const Body = z.discriminatedUnion("op", [
+  z.object({ op: z.literal("candidates"), projectId: z.string() }),
   z.object({ op: z.literal("topic"), projectId: z.string(), topic: zFactoryTopic }),
   z.object({ op: z.literal("formats"), projectId: z.string(), selected: z.array(zFormatKind).min(1) }),
   z.object({ op: z.literal("source"), projectId: z.string(), source: zFactorySource }),

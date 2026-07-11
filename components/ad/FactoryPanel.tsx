@@ -3,7 +3,7 @@
 // 사람이 정하는 세 지점(주제 택1 · 포맷 확정 · 소재 붙여넣기)에서 멈추고,
 // 생성(STEP4~6)은 한 번에 자동으로 돈다. 서버가 전이시킨 프로젝트를 onApply로 넘긴다.
 import { useState } from "react";
-import type { AdProject, ChannelOutput, ContentType, FactoryCategory, FormatKind } from "@/lib/ad/schema";
+import type { AdProject, ChannelOutput, ContentType, FactoryCategory, FactoryTopic, FormatKind } from "@/lib/ad/schema";
 import { factoryOp } from "@/lib/client/ad";
 import Select from "@/components/ui/Select";
 import {
@@ -19,6 +19,7 @@ import {
 } from "@/lib/ad/factory/presets";
 
 const CATEGORY_OPTIONS = (Object.keys(CATEGORY_LABELS) as FactoryCategory[]).map((c) => ({ value: c, label: CATEGORY_LABELS[c] }));
+const SCORE_GLYPH: Record<"high" | "mid" | "low", string> = { high: "◎", mid: "○", low: "△" };
 const ALL_TYPES = Object.keys(CONTENT_TYPE_LABELS) as ContentType[];
 const ALL_FORMATS = Object.keys(FORMAT_LABELS) as FormatKind[];
 
@@ -75,6 +76,22 @@ export default function FactoryPanel({
       setBusy(false);
       setPhase("");
     }
+  }
+
+  function fetchCandidates() {
+    void run(() => factoryOp(project.projectId, { op: "candidates" }), "트렌드 수집·스코어링 중… (30초~1분)");
+  }
+
+  function pickCandidate(c: FactoryTopic) {
+    // 로컬 폼도 동기화 — 이후 '직접 입력' 폼을 열어도 선택값이 반영돼 있게
+    setTitle(c.title);
+    setCategory(c.category);
+    setTypes(c.supportedTypes);
+    void run(async () => {
+      const p = await factoryOp(project.projectId, { op: "topic", topic: c });
+      setFormats(p.factory?.formatPreset?.selected ?? recommendFormats(c.supportedTypes));
+      return p;
+    });
   }
 
   function submitTopic() {
@@ -157,28 +174,75 @@ export default function FactoryPanel({
 
       {open && (
         <div className="mt-3 flex flex-col gap-3">
-          {/* STEP1 · 주제 (L1: 사람이 입력 — L2에서 트렌드 후보 자동 추천으로 확장) */}
+          {/* STEP1 · 주제 후보 추천 [반자동 → 택1] — 트렌드 수집이 기본, 직접 입력은 폴백 */}
           {(!f || stage === "topic_candidates" || stage === "format_preset") && (
             <div className="rounded-md border border-border/60 bg-surface-muted/30 p-3">
-              <div className={label}>① 주제 (aib.vote 비교로 변환할 화제)</div>
-              <div className="flex flex-wrap items-start gap-2">
-                <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder='예: 삼성전자 2분기 89조 영업이익, AI들은 믿을까' className={`${input} min-w-64 flex-1`} disabled={gated} />
-                <div className="w-36 shrink-0">
-                  <Select value={category} options={CATEGORY_OPTIONS} onChange={(v) => setCategory(v as FactoryCategory)} />
-                </div>
-              </div>
-              <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                <span className="text-[11px] text-muted">성립하는 유형:</span>
-                {ALL_TYPES.map((t) => (
-                  <button key={t} onClick={() => setTypes((x) => toggle(x, t))} title={CONTENT_TYPE_HINTS[t]} className={chip(types.includes(t))} disabled={gated}>
-                    {CONTENT_TYPE_LABELS[t]}
-                    {CATEGORY_TYPE_AFFINITY[category].includes(t) && <span className="ml-1 text-[10px] text-empathy">잘 붙음</span>}
-                  </button>
-                ))}
-                <button onClick={submitTopic} disabled={gated} className={`ml-auto ${primaryBtn}`}>
-                  주제 확정 →
+              <div className="flex flex-wrap items-center gap-2">
+                <span className={label.replace("mb-1 ", "")}>① 주제 후보 (최근 화제 → 카테고리별 수집 → 3개 추천)</span>
+                <button onClick={fetchCandidates} disabled={gated} className={`ml-auto ${f?.candidates?.length ? "rounded-md border border-border px-3 py-1.5 text-sm text-ink hover:border-empathy disabled:opacity-40" : primaryBtn}`}>
+                  {f?.candidates?.length ? "↻ 다시 추천받기" : "🔥 트렌드에서 후보 3개 추천받기"}
                 </button>
               </div>
+
+              {/* 후보 3장 — 택1 */}
+              {stage === "topic_candidates" && !!f?.candidates?.length && (
+                <div className="mt-2 grid gap-2 lg:grid-cols-3">
+                  {f.candidates.map((c, i) => (
+                    <div key={i} className="flex flex-col gap-1.5 rounded-md border border-border bg-surface p-2.5">
+                      <div className="flex items-start gap-1.5">
+                        <span className="shrink-0 rounded bg-empathy/15 px-1.5 py-0.5 text-[10px] font-semibold text-empathy">{CATEGORY_LABELS[c.category]}</span>
+                        <span className="text-sm font-bold leading-snug text-ink">{["①", "②", "③"][i]} {c.title}</span>
+                      </div>
+                      {c.scores && (
+                        <div className="text-[11px] text-muted">
+                          트렌드{SCORE_GLYPH[c.scores.trend]} 적합{SCORE_GLYPH[c.scores.fit]} 후킹{SCORE_GLYPH[c.scores.hook]}
+                        </div>
+                      )}
+                      <div className="flex flex-wrap gap-1">
+                        {c.supportedTypes.map((t) => (
+                          <span key={t} className="rounded bg-ink/10 px-1.5 py-0.5 text-[10px] text-muted">{CONTENT_TYPE_LABELS[t]}</span>
+                        ))}
+                      </div>
+                      {c.typeNote && <div className="text-[11px] leading-snug text-muted">{c.typeNote}</div>}
+                      {c.sourceNote && <div className="text-[10px] leading-snug text-muted/80">출처: {c.sourceNote}</div>}
+                      <button onClick={() => pickCandidate(c)} disabled={gated} className={`mt-auto ${primaryBtn}`}>
+                        이 주제로 진행 →
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* 선택된 주제 표시 */}
+              {stage === "format_preset" && f?.topic && (
+                <p className="mt-2 text-xs text-ink">
+                  ✅ 선택된 주제: <span className="rounded bg-empathy/15 px-1.5 py-0.5 text-[10px] font-semibold text-empathy">{CATEGORY_LABELS[f.topic.category]}</span>{" "}
+                  <b>{f.topic.title}</b> <span className="text-muted">({f.topic.supportedTypes.map((t) => CONTENT_TYPE_LABELS[t]).join(" · ")})</span>
+                </p>
+              )}
+
+              {/* 직접 입력 — 트렌드 키가 없거나 이미 정한 주제가 있을 때의 폴백 */}
+              <details className="mt-2">
+                <summary className="cursor-pointer text-[11px] text-muted hover:text-ink">주제 직접 입력 (추천 대신)</summary>
+                <div className="mt-2 flex flex-wrap items-start gap-2">
+                  <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder='예: 삼성전자 2분기 89조 영업이익, AI들은 믿을까' className={`${input} min-w-64 flex-1`} disabled={gated} />
+                  <div className="w-36 shrink-0">
+                    <Select value={category} options={CATEGORY_OPTIONS} onChange={(v) => setCategory(v as FactoryCategory)} />
+                  </div>
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  <span className="text-[11px] text-muted">성립하는 유형:</span>
+                  {ALL_TYPES.map((t) => (
+                    <button key={t} onClick={() => setTypes((x) => toggle(x, t))} title={CONTENT_TYPE_HINTS[t]} className={chip(types.includes(t))} disabled={gated}>
+                      {CONTENT_TYPE_LABELS[t]}
+                      {CATEGORY_TYPE_AFFINITY[category].includes(t) && <span className="ml-1 text-[10px] text-empathy">잘 붙음</span>}
+                    </button>
+                  ))}
+                  <button onClick={submitTopic} disabled={gated} className={`ml-auto ${primaryBtn}`}>
+                    주제 확정 →
+                  </button>
+                </div>
+              </details>
             </div>
           )}
 

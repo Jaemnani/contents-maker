@@ -87,6 +87,7 @@ export async function listAdProjects(): Promise<AdProject[]> {
 
 // ── aib content factory (decision 제출 — stage 전이 후 프로젝트 반환) ────────────
 export type FactoryOpBody =
+  | { op: "candidates" }
   | { op: "topic"; topic: FactoryTopic }
   | { op: "formats"; selected: FormatKind[] }
   | { op: "source"; source: FactorySource }
