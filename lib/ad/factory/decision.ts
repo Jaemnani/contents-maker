@@ -48,6 +48,8 @@ export async function resolveDecision(projectId: string, input: FactoryInput): P
           formatPreset: { recommended, selected: recommended },
         }; // 후보(candidates)는 택1과 함께 소진 — 새 배치는 다시 추천받는다
         p.meta.topic = input.topic.title; // 기존 파이프라인(대본/트렌드)과 주제 정렬
+        // 추천 이미지 프롬프트 → seedPrompt: 페이지 편집의 "추천 프롬프트 불러오기"로 연결
+        if (input.topic.imagePrompt) p.meta.seedPrompt = input.topic.imagePrompt;
       });
 
     case "formats":

@@ -146,14 +146,23 @@ export async function buildShortsSpec(topic: FactoryTopic, source: FactorySource
     "- caption: 한국어, 20자 이내, 펀치있게. 인용 컷은 모델명과 짧은 답 인용.",
     "- vo: 자연스러운 구어체 한국어, 컷당 2-4초(15-30음절). 검색 조건(off/on)을 훅이나 교훈에 명시.",
     "- 신뢰성: 모델 답 속 수치는 \"모델이 그렇게 답했다\"로. factNote만 사실로 쓸 수 있다.",
-    "- imagePrompt: vivid English image-gen prompt, vertical 9:16, no text in image.",
+    "- imagePrompt: vivid English image-gen prompt, vertical 9:16, no text in image. hookImageHint가 있으면 1번 컷(훅)의 imagePrompt는 그 컨셉을 따른다.",
     "- endcardVo: 마지막 투표 유도 한 마디 (선택).",
     "",
     voice,
     "",
     'Output ONLY this JSON: {"pages":[{"caption":"...","vo":"...","imagePrompt":"..."}],"endcardVo":"..."}',
   ].join("\n");
-  const user = JSON.stringify({ topic: topic.title, piece, question: source.question, searchMode: source.searchMode, modelA: source.modelA, modelB: source.modelB, factNote: source.factNote ?? null });
+  const user = JSON.stringify({
+    topic: topic.title,
+    piece,
+    question: source.question,
+    searchMode: source.searchMode,
+    modelA: source.modelA,
+    modelB: source.modelB,
+    factNote: source.factNote ?? null,
+    hookImageHint: topic.imagePrompt ?? null, // 주제 선정 때 추천된 훅 이미지 컨셉 — 1번 컷에 반영
+  });
   const out = await factoryLlm(zShortsOut, sys, user);
   if (out.pages.length < SHORTS_STRUCTURE.length) throw new Error(`쇼츠 컷이 ${out.pages.length}개만 생성됐습니다 — 다시 시도해 주세요.`);
   const pages: AdPage[] = SHORTS_STRUCTURE.map((s, i) => ({

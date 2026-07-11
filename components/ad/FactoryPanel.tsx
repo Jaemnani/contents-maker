@@ -204,6 +204,7 @@ export default function FactoryPanel({
                         ))}
                       </div>
                       {c.typeNote && <div className="text-[11px] leading-snug text-muted">{c.typeNote}</div>}
+                      {c.imagePrompt && <div className="text-[11px] leading-snug text-muted">🖼 {c.imagePrompt}</div>}
                       {c.sourceNote && <div className="text-[10px] leading-snug text-muted/80">출처: {c.sourceNote}</div>}
                       <button onClick={() => pickCandidate(c)} disabled={gated} className={`mt-auto ${primaryBtn}`}>
                         이 주제로 진행 →
@@ -218,6 +219,7 @@ export default function FactoryPanel({
                 <p className="mt-2 text-xs text-ink">
                   ✅ 선택된 주제: <span className="rounded bg-empathy/15 px-1.5 py-0.5 text-[10px] font-semibold text-empathy">{CATEGORY_LABELS[f.topic.category]}</span>{" "}
                   <b>{f.topic.title}</b> <span className="text-muted">({f.topic.supportedTypes.map((t) => CONTENT_TYPE_LABELS[t]).join(" · ")})</span>
+                  {f.topic.imagePrompt && <span className="block text-muted">🖼 추천 이미지: {f.topic.imagePrompt} — 페이지 편집의 ‘추천 프롬프트’ 버튼으로 불러올 수 있어요</span>}
                 </p>
               )}
 

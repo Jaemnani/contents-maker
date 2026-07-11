@@ -186,6 +186,7 @@ export const zFactoryTopic = z.object({
   scores: z.object({ trend: zScore, fit: zScore, hook: zScore }).optional(), // 3중 스코어링 (트렌드·제품적합·후킹)
   typeNote: z.string().optional(), // 각 유형이 성립하는 근거 한 줄
   sourceNote: z.string().optional(), // 화제 근거 한 줄 (원 헤드라인·출처)
+  imagePrompt: z.string().optional(), // 제목(훅) 페이지 메인 미디어용 추천 이미지 생성 프롬프트 (한국어 장면 묘사)
 });
 export type FactoryTopic = z.infer<typeof zFactoryTopic>;
 

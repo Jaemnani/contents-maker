@@ -77,9 +77,10 @@ export async function pickTopicCandidates(): Promise<FactoryTopic[]> {
     "3) scores: trend(지금 사람들이 찾는가)·fit(aib.vote 비교 프롬프트로 흥미롭게 변환되는가)·hook(놀라운 반전·논쟁이 있는가)을 각각 high/mid/low로.",
     "4) supportedTypes: 성립하는 유형만 — lie_speed(정답 있는 사실형 질문), open_weight(오픈웨이트 모델 비교가 자연스러움), opinion_clash(견해·판단이 갈릴 질문). typeNote에 각 유형이 되는 근거 한 줄.",
     "5) sourceNote: 어떤 화제에서 왔는지 근거 한 줄 (원 헤드라인 + 출처).",
-    "6) 스코어 종합(trend > fit > hook 가중)이 높은 순으로 3개.",
+    '6) imagePrompt: 제목(훅) 페이지의 메인 이미지를 생성할 프롬프트 — 한국어 장면 묘사 한 문장, 주제를 은유·유머로 시각화 (예: "일론 머스크의 스페이스X 로켓을 두고 로봇들이 갑론을박하는 장면"). 세로 화면에 어울리는 단일 장면, 이미지 속 글자 금지.',
+    "7) 스코어 종합(trend > fit > hook 가중)이 높은 순으로 3개.",
     "",
-    'Output ONLY this JSON: {"candidates":[{"title":"...","category":"economy","scores":{"trend":"high","fit":"high","hook":"mid"},"supportedTypes":["lie_speed"],"typeNote":"...","sourceNote":"..."}]}',
+    'Output ONLY this JSON: {"candidates":[{"title":"...","category":"economy","scores":{"trend":"high","fit":"high","hook":"mid"},"supportedTypes":["lie_speed"],"typeNote":"...","sourceNote":"...","imagePrompt":"..."}]}',
   ].join("\n");
   const out = await factoryLlm(zOut, sys, JSON.stringify({ pool }), 4000);
   const candidates = out.candidates.filter((c) => c.supportedTypes.length > 0).slice(0, 3);
