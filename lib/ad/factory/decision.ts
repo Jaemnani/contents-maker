@@ -15,7 +15,7 @@ import { pickTopicCandidates } from "@/lib/ad/factory/step1-topic";
 import { packageByType } from "@/lib/ad/factory/step4-package";
 import { buildShortsSpec, renderPerChannel } from "@/lib/ad/factory/step5-channel";
 import { buildPublishPlan, factCheck } from "@/lib/ad/factory/step6-output";
-import { AIB_CTA, recommendFormats } from "@/lib/ad/factory/presets";
+import { AIB_CTA_URL, recommendFormats } from "@/lib/ad/factory/presets";
 import { AIB_LOGO_ABS } from "@/lib/ad/factory/rules/voice";
 
 export type FactoryInput =
@@ -134,7 +134,7 @@ async function runPackage(projectId: string): Promise<AdProject> {
         enabled: true,
         templateId: "logo-cta",
         transitionTemplateId: "zoom-blur",
-        cta: AIB_CTA,
+        cta: AIB_CTA_URL,
         vo: shorts.endcardVo || p.endcard.vo,
         voAudio: shorts.endcardVo && shorts.endcardVo !== p.endcard.vo ? undefined : p.endcard.voAudio,
       };
@@ -142,7 +142,7 @@ async function runPackage(projectId: string): Promise<AdProject> {
     p.product = {
       ...p.product,
       name: p.product.name.trim() ? p.product.name : "aib.vote",
-      cta: AIB_CTA,
+      cta: AIB_CTA_URL,
       ...(logoRel ? { logoPath: logoRel } : {}),
     };
   });

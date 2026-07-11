@@ -4,7 +4,8 @@
 import type { ContentType, FactoryCategory, FormatKind, FactoryChannel } from "@/lib/ad/schema";
 
 export const AIB_URL = "https://aib.vote";
-export const AIB_CTA = "직접 투표해보기 → aib.vote";
+export const AIB_CTA = "직접 투표해보기 → aib.vote"; // 채널 카피 말미용
+export const AIB_CTA_URL = "https://www.aib.vote"; // 엔드카드 화면 CTA 문구 (고정 디폴트)
 
 export const CONTENT_TYPE_LABELS: Record<ContentType, string> = {
   lie_speed: "거짓말·속도 비교",
