@@ -113,14 +113,34 @@ export async function renderPerChannel(
   return { outputs, warnings };
 }
 
-// ── 쇼츠 페이지 명세 — 고정 6컷 구조 (훅 → A답 → B답 → 반전 → 교훈 → 엔드카드) ──────
-const SHORTS_STRUCTURE = [
+// ── 쇼츠 페이지 명세 — 유형별 컷 구조 (+ 엔드카드) ──────────────────────────────
+interface ShortsCut {
+  visual: string;
+  motion: string;
+  transition: string;
+  role: string;
+}
+
+// 기본(거짓말·속도 등): 훅 → A답 → B답 → 반전 → 교훈. 반전이 스포일러라 팩트는 뒤에서 공개.
+const SHORTS_STRUCTURE: ShortsCut[] = [
   { visual: "fullscreen-title", motion: "whip-zoom-in", transition: "cut", role: "훅 — 질문을 던진다 (궁금증 유발)" },
   { visual: "quote-card", motion: "drift-up", transition: "cut", role: "모델A의 답 (짧은 인용)" },
   { visual: "quote-card", motion: "drift-up", transition: "whip-pan", role: "모델B의 답 (짧은 인용, A와 대비)" },
   { visual: "big-stat", motion: "caption-pop", transition: "glitch", role: "반전 — 실제 사실/결과 (숫자·핵심 강조)" },
   { visual: "split-media-text", motion: "ken-burns-zoom", transition: "zoom-blur", role: "교훈 — 하나만 믿으면 안 되는 이유" },
-] as const;
+];
+
+// 의견 대립(텍스트 의견 비교): 반전이 없으므로 제목 바로 다음에 배경 팩트를 깔아준다.
+const OPINION_STRUCTURE: ShortsCut[] = [
+  { visual: "fullscreen-title", motion: "whip-zoom-in", transition: "cut", role: "훅 — 질문을 던진다 (궁금증 유발)" },
+  { visual: "split-media-text", motion: "ken-burns-zoom", transition: "cut", role: "배경 팩트 — 주제와 질문(프롬프트)에 깔린 사실을 한 줄로 요약 (무엇을 물었고 어떤 조건인지, 검색 off/on 포함)" },
+  { visual: "quote-card", motion: "drift-up", transition: "cut", role: "모델A의 의견 (짧은 인용)" },
+  { visual: "quote-card", motion: "drift-up", transition: "whip-pan", role: "모델B의 의견 (A와 정반대 지점이 드러나게)" },
+  { visual: "big-stat", motion: "caption-pop", transition: "glitch", role: "대립 핵심 — 두 의견이 갈리는 지점을 한 문장/키워드로" },
+  { visual: "split-media-text", motion: "ken-burns-zoom", transition: "zoom-blur", role: "투표 유도 — 당신은 누구 편? (aib.vote에서 직접 비교 권유)" },
+];
+
+const shortsStructure = (piece: ContentPiece): ShortsCut[] => (piece.type === "opinion_clash" ? OPINION_STRUCTURE : SHORTS_STRUCTURE);
 
 const zShortsOut = z.object({
   pages: z.array(z.object({ caption: z.string(), vo: z.string(), imagePrompt: z.string() })),
@@ -132,15 +152,16 @@ export interface ShortsSpec {
   endcardVo?: string;
 }
 
-/** 콘텐츠 골자 → 쇼츠 5컷 페이지 명세(자막/VO/이미지 프롬프트). 렌더·TTS·이미지는 에디터에서. */
+/** 콘텐츠 골자 → 쇼츠 컷 명세(자막/VO/이미지 프롬프트) — 유형별 구조. 렌더·TTS·이미지는 에디터에서. */
 export async function buildShortsSpec(topic: FactoryTopic, source: FactorySource, piece: ContentPiece): Promise<ShortsSpec> {
+  const structure = shortsStructure(piece);
   const voice = await voiceRules();
   const sys = [
     "You are a short-form (15-30s) ad scriptwriter for aib.vote (9:16 vertical).",
-    "고정된 5컷 구조에 맞춰 각 컷의 caption(화면 자막)과 vo(내레이션), imagePrompt를 쓴다.",
+    `고정된 ${structure.length}컷 구조에 맞춰 각 컷의 caption(화면 자막)과 vo(내레이션), imagePrompt를 쓴다.`,
     "",
-    "컷 구조 (순서 고정, 정확히 5개 출력):",
-    ...SHORTS_STRUCTURE.map((s, i) => `${i + 1}. ${s.role}`),
+    `컷 구조 (순서 고정, 정확히 ${structure.length}개 출력):`,
+    ...structure.map((s, i) => `${i + 1}. ${s.role}`),
     "",
     "규칙:",
     "- caption: 한국어, 20자 이내, 펀치있게. 인용 컷은 모델명과 짧은 답 인용.",
@@ -164,8 +185,8 @@ export async function buildShortsSpec(topic: FactoryTopic, source: FactorySource
     hookImageHint: topic.imagePrompt ?? null, // 주제 선정 때 추천된 훅 이미지 컨셉 — 1번 컷에 반영
   });
   const out = await factoryLlm(zShortsOut, sys, user);
-  if (out.pages.length < SHORTS_STRUCTURE.length) throw new Error(`쇼츠 컷이 ${out.pages.length}개만 생성됐습니다 — 다시 시도해 주세요.`);
-  const pages: AdPage[] = SHORTS_STRUCTURE.map((s, i) => ({
+  if (out.pages.length < structure.length) throw new Error(`쇼츠 컷이 ${out.pages.length}개만 생성됐습니다 — 다시 시도해 주세요.`);
+  const pages: AdPage[] = structure.map((s, i) => ({
     ...newAdPage("image"),
     visualTemplateId: s.visual,
     motionTemplateId: s.motion,
