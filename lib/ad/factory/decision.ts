@@ -3,6 +3,7 @@
 // 긴 LLM 작업(package)은 잠금 밖에서 실행하고, 결과 반영만 mutateAdProject(잠금)로 쓴다.
 import "server-only";
 import { promises as fs } from "fs";
+import crypto from "crypto";
 import path from "path";
 import {
   type AdProject,
@@ -97,6 +98,9 @@ async function runPackage(projectId: string): Promise<AdProject> {
   if (!formats.length) throw new Error("포맷을 먼저 확정하세요.");
   if (!f.source) throw new Error("소재(aib.vote 비교 결과)를 먼저 입력하세요.");
 
+  // UTM 캠페인 ID — 배치당 1개 (재생성해도 같은 배치는 같은 캠페인)
+  const campaign = f.campaign ?? `seed-${new Date().toISOString().slice(0, 10)}-${crypto.randomBytes(4).toString("hex")}`;
+
   // STEP4: 유형별 골자 (되는 유형만)
   const pieces = await packageByType(f.topic, f.source, f.topic.supportedTypes);
 
@@ -105,13 +109,13 @@ async function runPackage(projectId: string): Promise<AdProject> {
   // 쇼츠 추천 유형(거짓말·의견대립) 우선으로 영상 골자를 고른다
   const videoPiece = pieces.find((p) => p.type === "lie_speed") ?? pieces.find((p) => p.type === "opinion_clash") ?? pieces[0];
   const [channel, shorts] = await Promise.all([
-    renderPerChannel(f.topic, f.source, pieces, formats),
+    renderPerChannel(f.topic, f.source, pieces, formats, campaign),
     wantsVideo ? buildShortsSpec(f.topic, f.source, videoPiece) : Promise.resolve(null),
   ]);
 
   // STEP6: 사실확인 체크(필수 고정 항목) + 배포 플랜
   const checks = await factCheck(f.source, pieces);
-  const plan = buildPublishPlan(channel.outputs, checks, formats, pieces.map((p) => p.type), channel.warnings);
+  const plan = buildPublishPlan(channel.outputs, checks, formats, pieces.map((p) => p.type), channel.warnings, campaign);
 
   // 브랜드 에셋: aib 로고 락업을 프로젝트로 복사 (엔드카드 로고)
   let logoRel: string | undefined;
@@ -127,6 +131,7 @@ async function runPackage(projectId: string): Promise<AdProject> {
   return mutateAdProject(projectId, (p) => {
     if (!p.factory) throw new Error("팩토리 상태가 초기화됐습니다 — 처음부터 다시 진행하세요.");
     p.factory.stage = "packaged";
+    p.factory.campaign = campaign;
     p.factory.pieces = pieces;
     p.factory.plan = plan;
     if (shorts) {

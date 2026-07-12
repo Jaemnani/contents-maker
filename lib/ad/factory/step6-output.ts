@@ -14,7 +14,7 @@ import {
   type PublishPlan,
 } from "@/lib/ad/schema";
 import { factoryLlm } from "@/lib/ad/factory/llm";
-import { CONTENT_TYPE_LABELS } from "@/lib/ad/factory/presets";
+import { CONTENT_TYPE_LABELS, buildLinkSheet } from "@/lib/ad/factory/presets";
 
 const zOut = z.object({ items: z.array(zFactCheckItem) });
 
@@ -33,7 +33,7 @@ export async function factCheck(source: FactorySource, pieces: ContentPiece[]): 
 }
 
 /** 배포 일정 제안 + 로테이션 메모(이번에 못 만든 유형 → 다음 실행 우선). */
-export function buildPublishPlan(outputs: ChannelOutput[], factCheckItems: FactCheckItem[], selectedFormats: FormatKind[], madeTypes: ContentType[], warnings: string[] = []): PublishPlan {
+export function buildPublishPlan(outputs: ChannelOutput[], factCheckItems: FactCheckItem[], selectedFormats: FormatKind[], madeTypes: ContentType[], warnings: string[] = [], campaign?: string): PublishPlan {
   const hasVideo = selectedFormats.includes("shorts") || selectedFormats.includes("ugc_demo");
   const hasStatic = selectedFormats.includes("card_news") || selectedFormats.includes("single_image");
   const schedule = [
@@ -48,5 +48,12 @@ export function buildPublishPlan(outputs: ChannelOutput[], factCheckItems: FactC
   const rotationMemo = missing.length
     ? `이번에 못 만든 유형: ${missing.map((t) => CONTENT_TYPE_LABELS[t]).join(", ")} — 다음 실행에서 우선 채울 것`
     : "3개 유형 모두 제작됨 — 로테이션 부담 없음";
-  return { outputs, factCheck: factCheckItems, schedule, rotationMemo, warnings: warnings.length ? warnings : undefined };
+  return {
+    outputs,
+    factCheck: factCheckItems,
+    schedule,
+    rotationMemo,
+    warnings: warnings.length ? warnings : undefined,
+    links: campaign ? buildLinkSheet(campaign) : undefined,
+  };
 }

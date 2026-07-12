@@ -17,7 +17,7 @@ import {
 import { factoryLlm } from "@/lib/ad/factory/llm";
 import { voiceRules } from "@/lib/ad/factory/rules/voice";
 import { distributionRules } from "@/lib/ad/factory/rules/distribution";
-import { AIB_CTA, CHANNELS_FOR_FORMAT, CHANNEL_SPECS } from "@/lib/ad/factory/presets";
+import { AIB_CTA, CHANNELS_FOR_FORMAT, CHANNEL_SPECS, CHANNEL_UTM, buildAibLink, utmContentFor } from "@/lib/ad/factory/presets";
 
 const zChannelOut = z.object({
   outputs: z.array(
@@ -45,6 +45,12 @@ export function requiredOutputs(formats: FormatKind[], pieces: ContentPiece[]): 
   return out;
 }
 
+// 본문 속 aib.vote 언급(URL형/맨몸형)을 그 채널의 UTM 링크로 치환 — 태그(#aib)는 건드리지 않는다.
+const AIB_MENTION = /(?:https?:\/\/)?(?:www\.)?aib\.vote[^\s"')\]]*/g;
+function applyUtmLink(text: string, link: string): string {
+  return text.replace(AIB_MENTION, link);
+}
+
 /** voice.md 체크리스트의 기계적 항목을 결정적으로 강제 (이모지·긴 대시·ㅋㅋ→ㅎㅎ). */
 function sanitizeVoice(text: string): string {
   return text
@@ -62,7 +68,8 @@ export async function renderPerChannel(
   topic: FactoryTopic,
   source: FactorySource,
   pieces: ContentPiece[],
-  formats: FormatKind[]
+  formats: FormatKind[],
+  campaign: string
 ): Promise<{ outputs: ChannelOutput[]; warnings: string[] }> {
   const required = requiredOutputs(formats, pieces);
   if (!required.length) return { outputs: [], warnings: [] };
@@ -97,13 +104,19 @@ export async function renderPerChannel(
       const user = JSON.stringify({ topic: topic.title, searchMode: source.searchMode, pieces, format, required: missing });
       const out = await factoryLlm(zChannelOut, sys, user, 8000);
       for (const o of out.outputs) {
-        if (o.format !== format || !missing.includes(o.channel)) continue;
+        // 이 호출은 단일 포맷 그룹 — format 필드는 LLM 드리프트와 무관하게 코드가 강제한다
+        if (!missing.includes(o.channel)) continue;
         missing = missing.filter((c) => c !== o.channel);
+        const utm = CHANNEL_UTM[o.channel];
+        const link = buildAibLink({ ...utm, content: utmContentFor(format, o.channel), campaign });
+        const clean = (t: string) => applyUtmLink(sanitizeVoice(t), link);
         outputs.push({
           ...o,
-          title: o.title ? sanitizeVoice(o.title) : o.title,
-          body: sanitizeVoice(o.body),
-          parts: o.parts?.map(sanitizeVoice),
+          format,
+          title: o.title ? clean(o.title) : o.title,
+          body: clean(o.body),
+          parts: o.parts?.map(clean),
+          link,
           aspectRatio: video ? CHANNEL_SPECS[o.channel].aspect : undefined,
         });
       }

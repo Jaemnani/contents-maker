@@ -338,11 +338,37 @@ export default function FactoryPanel({
                           </button>
                         </div>
                         <pre className="max-h-44 overflow-y-auto whitespace-pre-wrap font-sans text-xs leading-relaxed text-ink">{outputText(o)}</pre>
+                        {o.link && (
+                          <div className="mt-1.5 flex items-center gap-1.5 border-t border-border/60 pt-1.5">
+                            <span className="min-w-0 flex-1 truncate text-[10px] text-muted" title={o.link}>🔗 {o.link}</span>
+                            <button onClick={() => void copyOutput(`link:${key}`, o.link!)} className="shrink-0 rounded border border-border px-2 py-0.5 text-[10px] text-ink hover:border-empathy">
+                              {copied === `link:${key}` ? "복사됨 ✓" : "링크 복사"}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
                 </div>
               </div>
+              {!!f.plan.links?.length && (
+                <div className="rounded-md border border-border p-3">
+                  <div className={label}>
+                    배포 링크 표 (UTM{f.campaign ? ` · 캠페인 ${f.campaign}` : ""}) — 카피에 없는 채널(카톡·뉴스레터·QR 등)도 여기서 복사
+                  </div>
+                  <div className="grid gap-1 sm:grid-cols-2">
+                    {f.plan.links.map((l) => (
+                      <div key={l.label} className="flex items-center gap-1.5">
+                        <span className="w-36 shrink-0 text-[11px] text-ink">{l.label}</span>
+                        <span className="min-w-0 flex-1 truncate text-[10px] text-muted" title={l.url}>{l.url}</span>
+                        <button onClick={() => void copyOutput(`sheet:${l.label}`, l.url)} className="shrink-0 rounded border border-border px-2 py-0.5 text-[10px] text-ink hover:border-empathy">
+                          {copied === `sheet:${l.label}` ? "✓" : "복사"}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="rounded-md border border-warning/40 bg-warning/5 p-3">
                 <div className="mb-1 text-xs font-bold text-warning">발행 전 사실확인 체크 (필수)</div>
                 <ul className="flex flex-col gap-1 text-xs text-ink">

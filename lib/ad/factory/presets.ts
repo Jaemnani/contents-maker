@@ -93,6 +93,77 @@ export const CHANNEL_SPECS: Record<FactoryChannel, { aspect?: "9:16" | "4:5"; tw
   reddit: { note: "영어, 홍보 티 최소, 데이터 중심" },
 };
 
+// ── UTM 링크 체계 — 캠페인 = `${purpose}-${YYYY-MM-DD}-${hash8}`, 같은 배치는 같은 캠페인 ──
+// 일반적인 경우 모델 선택(a/b 파라미터)은 넣지 않는다 (필요할 때만 models 전달).
+
+export interface AibLinkOpts {
+  source: string; // utm_source (x, threads, dctribe, …)
+  medium: string; // utm_medium (social, community, messenger, email, offline)
+  content: string; // utm_content (post-body, short-bio, short-desc, post-print, …)
+  campaign: string;
+  models?: { a: string; b: string }; // 특별히 지정된 경우만
+}
+
+export function buildAibLink({ source, medium, content, campaign, models }: AibLinkOpts): string {
+  const params = new URLSearchParams();
+  if (models) {
+    params.set("a", models.a);
+    params.set("b", models.b);
+  }
+  params.set("utm_source", source);
+  params.set("utm_medium", medium);
+  params.set("utm_campaign", campaign);
+  params.set("utm_content", content);
+  return `${AIB_CTA_URL}/?${params.toString()}`;
+}
+
+/** 팩토리 채널 → utm_source/medium (디시 계열은 실제 시딩 채널명 dctribe). */
+export const CHANNEL_UTM: Record<FactoryChannel, { source: string; medium: string }> = {
+  x: { source: "x", medium: "social" },
+  threads: { source: "threads", medium: "social" },
+  dcinside: { source: "dctribe", medium: "community" },
+  naver_cafe: { source: "naver-cafe", medium: "community" },
+  instagram: { source: "instagram", medium: "social" },
+  youtube: { source: "youtube", medium: "social" },
+  naver_clip: { source: "naver-clip", medium: "social" },
+  tiktok: { source: "tiktok", medium: "social" },
+  reddit: { source: "reddit", medium: "community" },
+};
+
+/** utm_content: 글 계열은 post-body, 쇼츠는 채널별 게재 위치(본문/바이오/설명). */
+export function utmContentFor(format: FormatKind, channel: FactoryChannel): string {
+  const video = format === "shorts" || format === "ugc_demo";
+  if (!video) return "post-body";
+  if (channel === "youtube") return "short-desc";
+  if (channel === "instagram" || channel === "naver_clip" || channel === "tiktok") return "short-bio";
+  return "short-body"; // x, threads
+}
+
+/** 배포 링크 표 전체 (글 7 + 쇼츠 6) — 채널 카피가 없는 채널(카톡·뉴스레터·QR 등)도 포함. */
+export function buildLinkSheet(campaign: string, models?: { a: string; b: string }): { label: string; url: string }[] {
+  const post: [string, string, string, string][] = [
+    ["글 · X", "x", "social", "post-body"],
+    ["글 · Threads", "threads", "social", "post-body"],
+    ["글 · 디시트라이브", "dctribe", "community", "post-body"],
+    ["글 · cooln", "cooln", "community", "post-body"],
+    ["글 · 카카오톡", "kakaotalk", "messenger", "post-body"],
+    ["글 · 뉴스레터", "newsletter", "email", "post-body"],
+    ["글 · QR/오프라인", "qr", "offline", "post-print"],
+  ];
+  const short: [string, string, string, string][] = [
+    ["쇼츠 · X", "x", "social", "short-body"],
+    ["쇼츠 · Threads", "threads", "social", "short-body"],
+    ["쇼츠 · Instagram", "instagram", "social", "short-bio"],
+    ["쇼츠 · YouTube Shorts", "youtube", "social", "short-desc"],
+    ["쇼츠 · 네이버 클립", "naver-clip", "social", "short-bio"],
+    ["쇼츠 · TikTok", "tiktok", "social", "short-bio"],
+  ];
+  return [...post, ...short].map(([label, source, medium, content]) => ({
+    label,
+    url: buildAibLink({ source, medium, content, campaign, models }),
+  }));
+}
+
 export const STAGE_LABELS: Record<string, string> = {
   topic_candidates: "주제 후보",
   format_preset: "포맷 확정",

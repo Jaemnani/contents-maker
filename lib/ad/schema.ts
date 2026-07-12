@@ -227,6 +227,7 @@ export const zChannelOutput = z.object({
   body: z.string(),
   tags: z.array(z.string()).default([]),
   parts: z.array(z.string()).optional(), // 스레드·X 2단 구성
+  link: z.string().optional(), // 이 채널의 UTM 트래킹 링크 (본문/바이오/설명에 사용)
 });
 export type ChannelOutput = z.infer<typeof zChannelOutput>;
 
@@ -244,6 +245,7 @@ export const zPublishPlan = z.object({
   schedule: z.string(), // 배포 일정 제안 (글전용 즉시, 영상 제작 후 등)
   rotationMemo: z.string(), // 이번에 못 만든 유형 → 다음 실행 우선
   warnings: z.array(z.string()).optional(), // 생성 중 누락·주의 (조용한 누락 금지)
+  links: z.array(z.object({ label: z.string(), url: z.string() })).optional(), // 배포 링크 표 (글7+쇼츠6, UTM)
 });
 export type PublishPlan = z.infer<typeof zPublishPlan>;
 
@@ -261,6 +263,7 @@ export type FactoryStage = z.infer<typeof zFactoryStage>;
 export const zFactoryState = z.object({
   stage: zFactoryStage,
   automationLevel: z.number().int().min(0).max(4).default(1),
+  campaign: z.string().optional(), // UTM 캠페인 ID `${purpose}-${YYYY-MM-DD}-${hash8}` — 같은 배치는 같은 ID
   candidates: z.array(zFactoryTopic).optional(), // STEP1 추천 후보 3개 (택1 대기)
   topic: zFactoryTopic.optional(),
   formatPreset: zFormatPreset.optional(),
