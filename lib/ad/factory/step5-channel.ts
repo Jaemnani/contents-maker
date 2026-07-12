@@ -5,7 +5,6 @@ import "server-only";
 import { z } from "zod";
 import {
   zFactoryChannel,
-  zFormatKind,
   newAdPage,
   type AdPage,
   type ChannelOutput,
@@ -19,18 +18,16 @@ import { voiceRules } from "@/lib/ad/factory/rules/voice";
 import { distributionRules } from "@/lib/ad/factory/rules/distribution";
 import { AIB_CTA, CHANNELS_FOR_FORMAT, CHANNEL_SPECS, CHANNEL_UTM, buildAibLink, utmContentFor } from "@/lib/ad/factory/presets";
 
-const zChannelOut = z.object({
-  outputs: z.array(
-    z.object({
-      channel: zFactoryChannel,
-      format: zFormatKind,
-      title: z.string().optional(),
-      body: z.string(),
-      tags: z.array(z.string()).default([]),
-      parts: z.array(z.string()).optional(),
-    })
-  ),
+// 항목별 관용 파싱: 배열 전체를 하드 파싱하면 불량 항목 1개가 배치 전체를 무너뜨린다.
+// format은 그룹 호출이 코드로 강제하므로 스키마에서 요구하지 않는다.
+const zChannelItem = z.object({
+  channel: zFactoryChannel,
+  title: z.string().optional(),
+  body: z.string(),
+  tags: z.array(z.string()).default([]),
+  parts: z.array(z.string()).optional(),
 });
+const zChannelOut = z.object({ outputs: z.array(z.unknown()) });
 
 /** 확정된 포맷 → 필요한 (포맷 × 채널) 출력 목록. Reddit은 오픈웨이트 유형이 있을 때만. */
 export function requiredOutputs(formats: FormatKind[], pieces: ContentPiece[]): { format: FormatKind; channel: (typeof zFactoryChannel)["options"][number] }[] {
@@ -46,15 +43,19 @@ export function requiredOutputs(formats: FormatKind[], pieces: ContentPiece[]): 
 }
 
 // 본문 속 aib.vote 언급(URL형/맨몸형)을 그 채널의 UTM 링크로 치환 — 태그(#aib)는 건드리지 않는다.
-const AIB_MENTION = /(?:https?:\/\/)?(?:www\.)?aib\.vote[^\s"')\]]*/g;
+// 도메인 뒤에는 URL의 path/query/fragment에 쓸 수 있는 ASCII 문자만 허용한다.
+// 따라서 `aib.vote에서`, `aib.vote,` 같은 자연어의 조사·문장부호는 보존된다.
+// i: 대문자 표기(AIB.VOTE)도 치환 · 좌측 경계: myaib.vote 같은 단어 중간 오치환 방지.
+const AIB_MENTION = /(?<![A-Za-z0-9.-])(?:https?:\/\/)?(?:www\.)?aib\.vote(?:\/[A-Za-z0-9._~%!$&'*+;=:@/-]*)?(?:\?[A-Za-z0-9._~%!$&'*+;=:@/?-]*)?(?:#[A-Za-z0-9._~%!$&'*+;=:@/?-]*)?/gi;
 function applyUtmLink(text: string, link: string): string {
-  return text.replace(AIB_MENTION, link);
+  // path가 문장 끝에 올 때 삼켜진 마침표 등 꼬리 문장부호는 링크 밖으로 되돌린다
+  return text.replace(AIB_MENTION, (m) => link + (m.match(/[.,;:!?'")]+$/)?.[0] ?? ""));
 }
 
 /** voice.md 체크리스트의 기계적 항목을 결정적으로 강제 (이모지·긴 대시·ㅋㅋ→ㅎㅎ). */
 function sanitizeVoice(text: string): string {
   return text
-    .replace(/\p{Extended_Pictographic}/gu, "") // 이모지 절대 금지
+    .replace(/\p{Extended_Pictographic}|[\u{1F1E6}-\u{1F1FF}]|[\uFE0F\u200D\u20E3]/gu, "") // 이모지·국기·키캡·ZWJ 잔재까지
     .replace(/\s*—\s*/g, ", ") // 긴 대시 금지 — 쉼표로
     .replace(/ㅋ{2,}/g, "ㅎㅎ"); // 웃음은 ㅎㅎ
 }
@@ -75,10 +76,11 @@ export async function renderPerChannel(
   if (!required.length) return { outputs: [], warnings: [] };
   const [voice, dist] = await Promise.all([voiceRules(), distributionRules()]);
 
-  const outputs: ChannelOutput[] = [];
   const warnings: string[] = [];
   const formatGroups = [...new Set(required.map((r) => r.format))];
-  for (const format of formatGroups) {
+  // 포맷 그룹은 서로 독립 — 병렬 실행 (글전용/쇼츠 각 ~10초 → 동시)
+  const groupResults = await Promise.all(formatGroups.map(async (format) => {
+    const outputs: ChannelOutput[] = [];
     const video = format === "shorts" || format === "ugc_demo";
     const sys = [
       "You are the channel copywriter for aib.vote promotional content (한국어, Reddit만 영어).",
@@ -101,9 +103,18 @@ export async function renderPerChannel(
 
     let missing = required.filter((r) => r.format === format).map((r) => r.channel);
     for (let attempt = 0; attempt < 2 && missing.length; attempt++) {
-      const user = JSON.stringify({ topic: topic.title, searchMode: source.searchMode, pieces, format, required: missing });
-      const out = await factoryLlm(zChannelOut, sys, user, 8000);
-      for (const o of out.outputs) {
+      // 시도 실패(파싱·일시 장애)는 이 그룹의 warnings로 강등 — 다른 그룹/전체 배치를 죽이지 않는다
+      let items: z.infer<typeof zChannelItem>[];
+      try {
+        const out = await factoryLlm(zChannelOut, sys, JSON.stringify({ topic: topic.title, searchMode: source.searchMode, pieces, format, required: missing }), 8000);
+        items = out.outputs.flatMap((raw) => {
+          const r = zChannelItem.safeParse(raw);
+          return r.success ? [r.data] : []; // 불량 항목만 버림
+        });
+      } catch {
+        continue;
+      }
+      for (const o of items) {
         // 이 호출은 단일 포맷 그룹 — format 필드는 LLM 드리프트와 무관하게 코드가 강제한다
         if (!missing.includes(o.channel)) continue;
         missing = missing.filter((c) => c !== o.channel);
@@ -121,7 +132,11 @@ export async function renderPerChannel(
         });
       }
     }
-    if (missing.length) warnings.push(`${format} 카피 누락: ${missing.join(", ")} — '카피 다시 생성'으로 재시도하세요.`);
+    return { outputs, missing, format };
+  }));
+  const outputs = groupResults.flatMap((g) => g.outputs);
+  for (const g of groupResults) {
+    if (g.missing.length) warnings.push(`${g.format} 카피 누락: ${g.missing.join(", ")} — '카피 다시 생성'으로 재시도하세요.`);
   }
   return { outputs, warnings };
 }
@@ -204,9 +219,9 @@ export async function buildShortsSpec(topic: FactoryTopic, source: FactorySource
     visualTemplateId: s.visual,
     motionTemplateId: s.motion,
     transitionTemplateId: s.transition,
-    caption: out.pages[i].caption,
-    vo: out.pages[i].vo,
+    caption: sanitizeVoice(out.pages[i].caption), // 화면 자막도 말투 체크리스트(이모지·긴대시) 준수
+    vo: sanitizeVoice(out.pages[i].vo),
     imagePrompt: out.pages[i].imagePrompt,
   }));
-  return { pages, endcardVo: out.endcardVo };
+  return { pages, endcardVo: out.endcardVo ? sanitizeVoice(out.endcardVo) : out.endcardVo };
 }

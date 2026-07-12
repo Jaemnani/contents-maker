@@ -264,6 +264,7 @@ export const zFactoryState = z.object({
   stage: zFactoryStage,
   automationLevel: z.number().int().min(0).max(4).default(1),
   campaign: z.string().optional(), // UTM 캠페인 ID `${purpose}-${YYYY-MM-DD}-${hash8}` — 같은 배치는 같은 ID
+  packagingAt: z.string().optional(), // 진행 중인 package 시작 시각 — 중복 실행 가드 (10분 지나면 스테일 취급)
   candidates: z.array(zFactoryTopic).optional(), // STEP1 추천 후보 3개 (택1 대기)
   topic: zFactoryTopic.optional(),
   formatPreset: zFormatPreset.optional(),

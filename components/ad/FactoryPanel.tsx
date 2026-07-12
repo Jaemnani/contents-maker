@@ -35,11 +35,14 @@ export default function FactoryPanel({
   disabled,
   onApply,
   onFlush,
+  onBusy,
 }: {
   project: AdProject;
   disabled: boolean;
   onApply: (p: AdProject) => void;
   onFlush: () => Promise<void>;
+  /** 에디터 전역 busy 전파 — 긴 op 동안 undo/저장/다른 패널이 팩토리 상태를 덮지 않게 잠근다. */
+  onBusy?: (b: boolean) => void;
 }) {
   const f = project.factory;
   const [open, setOpen] = useState(!!f && f.stage !== "published");
@@ -64,7 +67,9 @@ export default function FactoryPanel({
   const gated = disabled || busy;
 
   async function run(op: () => Promise<AdProject>, phaseText = "") {
+    if (busy || disabled) return; // 재진입 가드 (더블클릭 → LLM 체인 2회 방지)
     setBusy(true);
+    onBusy?.(true);
     setErrMsg("");
     setPhase(phaseText);
     try {
@@ -74,11 +79,13 @@ export default function FactoryPanel({
       setErrMsg((e as Error).message);
     } finally {
       setBusy(false);
+      onBusy?.(false);
       setPhase("");
     }
   }
 
   function fetchCandidates() {
+    if (f?.topic && !confirm("다시 추천받으면 현재 선택된 주제·포맷이 초기화됩니다. 진행할까요?")) return;
     void run(() => factoryOp(project.projectId, { op: "candidates" }), "트렌드 수집·스코어링 중… (30초~1분)");
   }
 
@@ -160,7 +167,7 @@ export default function FactoryPanel({
           {f && (
             <button
               onClick={() => {
-                if (confirm("팩토리 상태를 초기화할까요? (생성된 페이지·카피는 유지되지 않는 것은 없고, 배치 상태만 초기화됩니다)")) void run(() => factoryOp(project.projectId, { op: "reset" }));
+                if (confirm("배치를 초기화할까요? 주제·소재·채널 카피·배포 링크가 삭제됩니다. (생성된 페이지·렌더 영상은 유지)")) void run(() => factoryOp(project.projectId, { op: "reset" }));
               }}
               disabled={gated}
               className="rounded border border-border px-2 py-0.5 text-[11px] text-muted hover:border-warning hover:text-warning disabled:opacity-40"
@@ -259,11 +266,9 @@ export default function FactoryPanel({
                     {f?.formatPreset?.recommended.includes(k) && <span className="ml-1 text-[10px] text-empathy">추천</span>}
                   </button>
                 ))}
-                {stage === "format_preset" && (
-                  <button onClick={submitFormats} disabled={gated} className={`ml-auto ${primaryBtn}`}>
-                    포맷 확정 →
-                  </button>
-                )}
+                <button onClick={submitFormats} disabled={gated} className={`ml-auto ${primaryBtn}`}>
+                  {stage === "format_preset" ? "포맷 확정 →" : "포맷 변경 적용"}
+                </button>
               </div>
             </div>
           )}
@@ -357,8 +362,8 @@ export default function FactoryPanel({
                     배포 링크 표 (UTM{f.campaign ? ` · 캠페인 ${f.campaign}` : ""}) — 카피에 없는 채널(카톡·뉴스레터·QR 등)도 여기서 복사
                   </div>
                   <div className="grid gap-1 sm:grid-cols-2">
-                    {f.plan.links.map((l) => (
-                      <div key={l.label} className="flex items-center gap-1.5">
+                    {f.plan.links.map((l, i) => (
+                      <div key={`${i}:${l.label}`} className="flex items-center gap-1.5">
                         <span className="w-36 shrink-0 text-[11px] text-ink">{l.label}</span>
                         <span className="min-w-0 flex-1 truncate text-[10px] text-muted" title={l.url}>{l.url}</span>
                         <button onClick={() => void copyOutput(`sheet:${l.label}`, l.url)} className="shrink-0 rounded border border-border px-2 py-0.5 text-[10px] text-ink hover:border-empathy">

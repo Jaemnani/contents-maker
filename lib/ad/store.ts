@@ -90,6 +90,23 @@ export async function writeAdProject(data: unknown): Promise<AdProject> {
   return withProjectLock(project.projectId, () => writeAdProjectUnlocked(project));
 }
 
+/**
+ * Whole-project save that PRESERVES the server-owned factory state. The editor never
+ * edits `factory` locally (all factory changes go through /api/ad/factory), so a stale
+ * editor snapshot must not clobber a batch that decision ops advanced meanwhile.
+ */
+export async function saveAdProjectKeepFactory(data: unknown): Promise<AdProject> {
+  const incoming = parseAdProject(data);
+  return withProjectLock(incoming.projectId, async () => {
+    try {
+      incoming.factory = (await readAdProject(incoming.projectId)).factory;
+    } catch {
+      /* first save of a new project — keep the incoming value */
+    }
+    return writeAdProjectUnlocked(incoming);
+  });
+}
+
 export async function readAdProject(projectId: string): Promise<AdProject> {
   return parseAdProject(JSON.parse(await fs.readFile(projectFile(projectId), "utf8")));
 }

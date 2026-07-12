@@ -12,7 +12,7 @@ import { zFactoryTopic, type FactoryCategory, type FactoryTopic } from "@/lib/ad
 import { factoryLlm } from "@/lib/ad/factory/llm";
 import { CATEGORY_LABELS } from "@/lib/ad/factory/presets";
 
-const zOut = z.object({ candidates: z.array(zFactoryTopic).min(1).max(3) });
+const zOut = z.object({ candidates: z.array(zFactoryTopic).min(1) }); // 초과분은 코드가 자른다 — max()로 하드실패시키지 않음
 
 // 카테고리별 뉴스 검색어 (NewsAPI everything, publishedAt 정렬)
 const CATEGORY_QUERIES: Record<FactoryCategory, string> = {

@@ -4,7 +4,7 @@
 import { z } from "zod";
 import { ZodError } from "zod";
 import { zFactorySource, zFactoryTopic, zFormatKind } from "@/lib/ad/schema";
-import { resolveDecision, type FactoryInput } from "@/lib/ad/factory/decision";
+import { resolveDecision, FactoryFlowError, type FactoryInput } from "@/lib/ad/factory/decision";
 
 export const runtime = "nodejs";
 export const maxDuration = 300; // package는 LLM 다회 체인, candidates는 트렌드 수집+스코어링
@@ -36,6 +36,9 @@ export async function POST(req: Request) {
     return Response.json({ project });
   } catch (e) {
     if (e instanceof ZodError) return err(`요청 검증 실패: ${e.issues[0]?.message ?? "invalid"}`, 400);
-    return err((e as Error).message, 500);
+    if (e instanceof FactoryFlowError) return err(e.message, 409); // 사용자 플로우 오류 — 서버 장애 아님
+    const msg = (e as Error).message ?? "";
+    if (/ENOENT/.test(msg)) return err("프로젝트를 찾을 수 없습니다.", 404); // 절대경로 노출 방지
+    return err(msg, 500);
   }
 }

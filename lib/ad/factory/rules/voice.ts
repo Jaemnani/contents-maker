@@ -7,10 +7,18 @@ import path from "path";
 export const SKILL_DIR = path.join(process.cwd(), ".claude", "skills", "aib-content-factory");
 export const AIB_LOGO_ABS = path.join(SKILL_DIR, "assets", "aib-lockup-black.png");
 
-async function readSkillFile(rel: string): Promise<string> {
+// mtime 캐시 — package 1회에 md를 3번 읽지 않으면서, md 수정은 다음 호출에 즉시 반영
+const fileCache = new Map<string, { mtimeMs: number; text: string }>();
+
+export async function readSkillFile(rel: string): Promise<string> {
   const abs = path.join(SKILL_DIR, rel);
   try {
-    return await fs.readFile(abs, "utf-8");
+    const stat = await fs.stat(abs);
+    const hit = fileCache.get(abs);
+    if (hit && hit.mtimeMs === stat.mtimeMs) return hit.text;
+    const text = await fs.readFile(abs, "utf-8");
+    fileCache.set(abs, { mtimeMs: stat.mtimeMs, text });
+    return text;
   } catch {
     throw new Error(`스킬 참조 파일이 없습니다: ${abs} — .claude/skills/aib-content-factory를 복원하세요.`);
   }

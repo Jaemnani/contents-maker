@@ -5,7 +5,7 @@
 //   GET                                   -> { projects }
 import { z } from "zod";
 import { ZodError } from "zod";
-import { createAdProject, writeAdProject, readAdProject, listAdProjects } from "@/lib/ad/store";
+import { createAdProject, saveAdProjectKeepFactory, readAdProject, listAdProjects } from "@/lib/ad/store";
 
 export const runtime = "nodejs";
 
@@ -38,7 +38,8 @@ export async function POST(req: Request) {
     }
     if (op === "save") {
       const b = SaveBody.parse(json);
-      return Response.json({ project: await writeAdProject(b.project) });
+      // factory는 서버 소유(/api/ad/factory) — 스테일 에디터 스냅샷이 배치를 덮지 않게 보존
+      return Response.json({ project: await saveAdProjectKeepFactory(b.project) });
     }
     return err(`알 수 없는 op: ${op}`, 400);
   } catch (e) {

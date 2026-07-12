@@ -73,7 +73,7 @@ export const CHANNEL_LABELS: Record<FactoryChannel, string> = {
 
 /** 포맷 → 채널 매핑 (SKILL STEP5 표). 쇼츠는 shortform_distribution.md의 6플랫폼. */
 export const CHANNELS_FOR_FORMAT: Record<FormatKind, FactoryChannel[]> = {
-  text_only: ["dcinside", "naver_cafe", "threads", "x"],
+  text_only: ["dcinside", "naver_cafe", "threads", "x", "reddit"], // reddit은 오픈웨이트 유형일 때만 생성됨
   card_news: ["instagram", "naver_cafe"],
   single_image: ["threads", "x", "instagram"],
   shorts: ["youtube", "instagram", "tiktok", "threads", "x", "naver_clip"],

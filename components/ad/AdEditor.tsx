@@ -211,6 +211,8 @@ export default function AdEditor({ project: initial, onExit }: { project: AdProj
   }, []);
 
   const selected = project.pages.find((p) => p.id === selectedId) ?? null;
+  // factory 참조는 factory가 실제로 바뀐 save/apply에서만 교체된다 (타이핑 patch는 spread라 참조 유지)
+  const factoryKey = useMemo(() => JSON.stringify(project.factory ?? null), [project.factory]);
 
   async function runCompose() {
     setBusy(true);
@@ -333,8 +335,10 @@ export default function AdEditor({ project: initial, onExit }: { project: AdProj
       {/* one-click style themes — a single undoable patch over every page */}
       <ThemeBar disabled={busy} onApply={(t) => patchProject(themePatch(projRef.current, t))} />
 
-      {/* aib 콘텐츠 팩토리 — 주제 1개 → 다채널 콘텐츠 배치 (스킬 aib-content-factory L1) */}
-      <FactoryPanel project={project} disabled={busy} onApply={applyProject} onFlush={flushSave} />
+      {/* aib 콘텐츠 팩토리 — 주제 1개 → 다채널 콘텐츠 배치 (스킬 aib-content-factory L1).
+          key: factory 내용이 바뀌면(택1/초기화/undo) 리마운트해 로컬 폼을 재시드 — 이전 배치 소재 잔존 방지.
+          onBusy: 긴 생성 op 동안 에디터 전역 잠금 (debounced save가 팩토리 상태를 덮지 않게). */}
+      <FactoryPanel key={factoryKey} project={project} disabled={busy} onApply={applyProject} onFlush={flushSave} onBusy={setBusy} />
 
       {/* AI 대본 생성 입력 · 브랜드 · BGM — one line */}
       <section className="mb-3 grid items-start gap-4 lg:grid-cols-3">
