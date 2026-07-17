@@ -111,6 +111,18 @@ export async function resolveDecision(projectId: string, input: FactoryInput): P
   }
 }
 
+/** aib 로고 락업을 프로젝트 assets/로 복사하고 outputs/-상대 경로를 돌려준다 (없으면 undefined → 기본 로고 폴백). */
+export async function adoptAibLogo(projectId: string): Promise<string | undefined> {
+  try {
+    const dstDir = path.join(projectDirAbs(projectId), "assets");
+    await fs.mkdir(dstDir, { recursive: true });
+    await fs.copyFile(AIB_LOGO_ABS, path.join(dstDir, "aib-lockup-black.png"));
+    return path.posix.join(projectRelDir(projectId), "assets", "aib-lockup-black.png");
+  } catch {
+    return undefined; // 스킬 에셋 없으면 기본 로고 폴백 (엔드카드가 public/brand/logo.png 사용)
+  }
+}
+
 /** packaged/published 배치를 무경고로 덮는 op를 차단 — 명시적 '초기화'를 요구한다. */
 function guardNotFinalized(p: AdProject): void {
   const stage = p.factory?.stage;
@@ -178,15 +190,7 @@ async function runPackageChain(projectId: string, snapshot: AdProject): Promise<
   const plan = buildPublishPlan(channel.outputs, checks ?? [], formats, pieces.map((p) => p.type), warnings, campaign);
 
   // 브랜드 에셋: aib 로고 락업을 프로젝트로 복사 (엔드카드 로고)
-  let logoRel: string | undefined;
-  try {
-    const dstDir = path.join(projectDirAbs(projectId), "assets");
-    await fs.mkdir(dstDir, { recursive: true });
-    await fs.copyFile(AIB_LOGO_ABS, path.join(dstDir, "aib-lockup-black.png"));
-    logoRel = path.posix.join(projectRelDir(projectId), "assets", "aib-lockup-black.png");
-  } catch {
-    logoRel = undefined; // 스킬 에셋 없으면 기본 로고 폴백 (엔드카드가 public/brand/logo.png 사용)
-  }
+  const logoRel = await adoptAibLogo(projectId);
 
   return mutateAdProject(projectId, (p) => {
     if (!p.factory) throw new Error("팩토리 상태가 초기화됐습니다 — 처음부터 다시 진행하세요.");

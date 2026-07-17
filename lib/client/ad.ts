@@ -85,6 +85,38 @@ export async function listAdProjects(): Promise<AdProject[]> {
   return (await jsonOrThrow(await fetch("/api/ad/project"))).projects ?? [];
 }
 
+// ── 뉴스 쇼츠 (aib.vote/news → 컷 구성) ─────────────────────────────────────────
+export interface NewsItem {
+  id: string;
+  title: string;
+  summary: string[];
+  details?: string;
+  source: string;
+  articleUrl?: string;
+  aibUrl: string;
+  publishedAt: string;
+  keywords: string[];
+}
+
+export async function fetchTodayNews(): Promise<{ items: NewsItem[]; date: string }> {
+  const d = await jsonOrThrow(await fetch("/api/ad/news"));
+  return { items: d.items ?? [], date: d.date ?? "" };
+}
+
+export async function composeNewsShorts(
+  projectId: string,
+  body: { mode: "brief" | "ai_react"; items: NewsItem[]; aibEndcard: boolean }
+): Promise<{ project: AdProject; warnings: string[] }> {
+  const d = await jsonOrThrow(
+    await fetch("/api/ad/news", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ projectId, ...body }),
+    })
+  );
+  return { project: d.project, warnings: d.warnings ?? [] };
+}
+
 // ── aib content factory (decision 제출 — stage 전이 후 프로젝트 반환) ────────────
 export type FactoryOpBody =
   | { op: "candidates" }

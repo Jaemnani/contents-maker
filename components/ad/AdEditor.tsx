@@ -13,6 +13,7 @@ import { snapProjectToBeat } from "@/lib/ad/beat";
 import { themePatch } from "@/lib/ad/themes";
 import ThemeBar from "@/components/ad/ThemeBar";
 import FactoryPanel from "@/components/ad/FactoryPanel";
+import NewsShortsPanel from "@/components/ad/NewsShortsPanel";
 import PageInspector from "@/components/ad/PageInspector";
 import PlayerPreview from "@/components/ad/PlayerPreview";
 import BgmPanel from "@/components/ad/BgmPanel";
@@ -339,6 +340,9 @@ export default function AdEditor({ project: initial, onExit }: { project: AdProj
           key: factory 내용이 바뀌면(택1/초기화/undo) 리마운트해 로컬 폼을 재시드 — 이전 배치 소재 잔존 방지.
           onBusy: 긴 생성 op 동안 에디터 전역 잠금 (debounced save가 팩토리 상태를 덮지 않게). */}
       <FactoryPanel key={factoryKey} project={project} disabled={busy} onApply={applyProject} onFlush={flushSave} onBusy={setBusy} />
+
+      {/* 뉴스 쇼츠 — aib.vote/news 오늘 기사 → 브리핑/AI반응 쇼츠 자동 구성 */}
+      <NewsShortsPanel project={project} disabled={busy} onApply={applyProject} onFlush={flushSave} onBusy={setBusy} />
 
       {/* AI 대본 생성 입력 · 브랜드 · BGM — one line */}
       <section className="mb-3 grid items-start gap-4 lg:grid-cols-3">

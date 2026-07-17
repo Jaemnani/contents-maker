@@ -53,7 +53,7 @@ function applyUtmLink(text: string, link: string): string {
 }
 
 /** voice.md 체크리스트의 기계적 항목을 결정적으로 강제 (이모지·긴 대시·ㅋㅋ→ㅎㅎ). */
-function sanitizeVoice(text: string): string {
+export function sanitizeVoice(text: string): string {
   return text
     .replace(/\p{Extended_Pictographic}|[\u{1F1E6}-\u{1F1FF}]|[\uFE0F\u200D\u20E3]/gu, "") // 이모지·국기·키캡·ZWJ 잔재까지
     .replace(/\s*—\s*/g, ", ") // 긴 대시 금지 — 쉼표로
